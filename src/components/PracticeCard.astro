@@ -1,0 +1,259 @@
+---
+/**
+ * The practice card: schedule blocks, primary/spiral moves, film, pod notes.
+ * Used three ways — inside the calendar drawer, on /practice/[date], and on
+ * the dashboard — so it renders from plain data, no collection calls here.
+ */
+import type { Practice } from '../lib/schemas.ts';
+import { formatDay } from '../lib/season.ts';
+
+interface Props {
+  practice: Practice;
+  /** id → display name for move links */
+  moveNames: Map<string, string>;
+  /** drawer/dashboard mode: no big header, link to the full page */
+  compact?: boolean;
+  /** the practice page has the date as its H1 already */
+  showDate?: boolean;
+}
+
+const { practice: p, moveNames, compact = false, showDate = true } = Astro.props;
+
+const moveLink = (id: string) => ({ id, name: moveNames.get(id) ?? id, href: `/moves/${id}/` });
+const primary = p.primary.map(moveLink);
+const spiral = p.spiral.map(moveLink);
+const film = p.film ? moveLink(p.film) : null;
+const pods = (['blue', 'gold', 'white'] as const).filter((pod) => p.pod_notes[pod]);
+const off = p.day_type === 'off';
+---
+
+<article class="practice-card card" data-date={p.date} data-status={p.status}>
+  <header class="pc-head">
+    <div class="pc-when">
+      {compact ? (
+        <a class="pc-date display" href={`/practice/${p.date}/`}>{formatDay(p.date, { weekday: 'short', month: 'short', day: 'numeric' })}</a>
+      ) : (
+        showDate && <span class="pc-date display">{formatDay(p.date)}</span>
+      )}
+      <span class={`badge solid block-${p.block}`}>{p.block}</span>
+      <span class="badge">{p.day_type}</span>
+      <span class="badge">wk {p.week}</span>
+      {p.status === 'delivered' ? (
+        <span class="badge delivered">✓ delivered</span>
+      ) : (
+        <span class="badge planned" data-planned-badge>planned</span>
+      )}
+    </div>
+    {!off && <span class="pc-duration display">{p.duration_min}′</span>}
+  </header>
+
+  {off ? (
+    <p class="muted">No practice — off day.</p>
+  ) : (
+    <>
+      {p.schedule.length > 0 ? (
+        <table class="pc-schedule">
+          <tbody>
+            {p.schedule.map((item) => (
+              <tr>
+                <td class="t">{item.start}</td>
+                <td class="len">{item.len}′</td>
+                <td>
+                  <strong>{item.label}</strong>
+                  {item.detail && <span class="muted"> — {item.detail}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p class="muted pc-empty">No schedule written yet.</p>
+      )}
+
+      {(primary.length > 0 || spiral.length > 0 || film) && (
+        <dl class="pc-moves">
+          {primary.length > 0 && (
+            <>
+              <dt>Primary</dt>
+              <dd>{primary.map((m) => <a class="chip" href={m.href}>{m.name}</a>)}</dd>
+            </>
+          )}
+          {spiral.length > 0 && (
+            <>
+              <dt>Spiral</dt>
+              <dd>{spiral.map((m) => <a class="chip spiral" href={m.href}>{m.name}</a>)}</dd>
+            </>
+          )}
+          {film && (
+            <>
+              <dt>Film</dt>
+              <dd><a class="chip film" href={film.href}>{film.name}</a></dd>
+            </>
+          )}
+        </dl>
+      )}
+
+      {pods.length > 0 && (
+        <ul class="pc-pods">
+          {pods.map((pod) => (
+            <li>
+              <span class={`pod-dot pod-${pod}`} aria-hidden="true"></span>
+              <strong class="pod-name">{pod}</strong> {p.pod_notes[pod]}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  )}
+
+  {compact && (
+    <a class="btn pc-full no-print" href={`/practice/${p.date}/`}>Full practice page</a>
+  )}
+</article>
+
+<style>
+  .practice-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .pc-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .pc-when {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .pc-date {
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-right: 0.35rem;
+  }
+  a.pc-date {
+    text-decoration: none;
+  }
+  a.pc-date:hover,
+  a.pc-date:focus-visible {
+    text-decoration: underline;
+  }
+  .pc-duration {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .badge.delivered {
+    color: var(--score-green);
+  }
+  .badge.planned {
+    color: var(--ink-soft);
+  }
+  .badge.planned.overdue {
+    color: var(--danger);
+    background: var(--flag-bg);
+  }
+
+  .pc-schedule {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .pc-schedule td {
+    border-top: 1px solid var(--line);
+    padding: 0.45rem 0.5rem 0.45rem 0;
+    vertical-align: baseline;
+  }
+  .pc-schedule tr:first-child td {
+    border-top: 2px solid var(--ink);
+  }
+  .pc-schedule .t {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.05rem;
+    white-space: nowrap;
+    width: 3.2rem;
+  }
+  .pc-schedule .len {
+    color: var(--ink-soft);
+    white-space: nowrap;
+    width: 2.8rem;
+  }
+
+  .pc-moves {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 0.8rem;
+    align-items: baseline;
+  }
+  .pc-moves dt {
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .pc-moves dd {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 0.7rem;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: var(--card);
+  }
+  .chip.spiral {
+    border-style: dashed;
+    color: var(--ink-soft);
+  }
+  .chip.film {
+    border-color: var(--install);
+    color: var(--install);
+  }
+
+  .pc-pods {
+    list-style: none;
+    margin: 0;
+    padding: 0.6rem 0 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .pod-dot {
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+    margin-right: 0.35em;
+  }
+  .pod-blue { background: var(--install); }
+  .pod-gold { background: var(--refine); }
+  .pod-white { background: #fff; border: 1.5px solid var(--ink); }
+  .pod-name {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pc-full {
+    align-self: flex-start;
+  }
+  .pc-empty {
+    margin: 0;
+  }
+</style>

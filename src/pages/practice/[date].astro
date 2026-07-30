@@ -1,0 +1,109 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PracticeCard from '../../components/PracticeCard.astro';
+import { getCollection, render } from 'astro:content';
+import { formatDay } from '../../lib/season.ts';
+
+export async function getStaticPaths() {
+  const practices = await getCollection('practices');
+  return practices.map((entry) => ({ params: { date: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const p = entry.data;
+const { Content } = await render(entry);
+
+const moves = await getCollection('moves');
+const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+
+const practices = await getCollection('practices');
+const dates = practices
+  .map((x) => x.data.date)
+  .sort()
+  .filter((d) => practices.find((x) => x.data.date === d)!.data.day_type !== 'off' || d === p.date);
+const i = dates.indexOf(p.date);
+const prev = i > 0 ? dates[i - 1] : null;
+const next = i >= 0 && i < dates.length - 1 ? dates[i + 1] : null;
+
+const hasNotes = entry.body && entry.body.trim().replace(/^## After-practice notes\s*$/m, '').trim().length > 0;
+---
+
+<Layout title={`Practice ${p.date}`} description={`Practice plan for ${formatDay(p.date)}`}>
+  <nav class="practice-nav no-print" aria-label="Practice navigation">
+    {prev ? <a class="btn" href={`/practice/${prev}/`}>← {prev}</a> : <span></span>}
+    <a class="btn" href={`/calendar#${p.date}`}>Calendar</a>
+    <button type="button" class="btn" onclick="window.print()">Print</button>
+    {next ? <a class="btn" href={`/practice/${next}/`}>{next} →</a> : <span></span>}
+  </nav>
+
+  <header class="practice-header">
+    <h1>{formatDay(p.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</h1>
+  </header>
+
+  <div class="practice-sheet">
+    <PracticeCard practice={p} moveNames={moveNames} showDate={false} />
+
+    <section class="notes prose">
+      <Content />
+      {p.status === 'planned' && !hasNotes && (
+        <p class="muted no-print">
+          After practice: set <code>status: delivered</code> in the file and write what actually
+          happened under the notes heading — the record is the point.
+        </p>
+      )}
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .practice-nav {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .practice-header h1 {
+    margin-bottom: 0.75rem;
+  }
+  .practice-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 760px;
+  }
+  .notes {
+    padding: 0 0.2rem;
+  }
+
+  /* print: one clean sheet for the whiteboard */
+  @media print {
+    .practice-header h1 {
+      font-size: 20pt;
+      margin: 0 0 8pt;
+    }
+    .practice-sheet {
+      gap: 6pt;
+      max-width: none;
+    }
+    .practice-sheet :global(.card) {
+      border: none;
+      padding: 0;
+    }
+    .practice-sheet :global(.chip) {
+      border: none;
+      padding: 0;
+      min-height: 0;
+      text-decoration: none;
+    }
+    .practice-sheet :global(.chip)::after {
+      content: ' ·';
+    }
+    .practice-sheet :global(.pc-full) {
+      display: none;
+    }
+    .notes {
+      font-size: 10pt;
+    }
+  }
+</style>
