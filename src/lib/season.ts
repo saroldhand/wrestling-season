@@ -103,5 +103,8 @@ export function seasonDays(): string[] {
  */
 export function defaultDayType(iso: string): DayType | null {
   if (HOLIDAYS[iso]) return 'off';
+  // The evaluate weekend is assessment work, not competition, whatever the
+  // weekday rhythm says (still no Sunday practice).
+  if (blockFor(iso) === 'evaluate' && weekdayOf(iso) !== 0) return 'install';
   return DAY_TYPE_BY_WEEKDAY[weekdayOf(iso)];
 }

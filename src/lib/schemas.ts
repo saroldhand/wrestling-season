@@ -98,7 +98,8 @@ export const practiceSchema = z
     day_type: z.enum(DAY_TYPES),
     block: z.enum(BLOCK_IDS),
     week: z.number().int().min(0).max(30),
-    duration_min: z.number().int().positive().max(480),
+    duration_min: z.number().int().min(0).max(480), // 0 is legal only for day_type: off
+
     primary: z.array(idString).default([]),
     spiral: z.array(idString).default([]),
     film: idString.optional(),
@@ -106,7 +107,16 @@ export const practiceSchema = z
     pod_notes: z.record(z.enum(PODS), z.string()).default({}),
     status: z.enum(PRACTICE_STATUSES),
   })
-  .strict();
+  .strict()
+  .superRefine((p, ctx) => {
+    if (p.duration_min === 0 && p.day_type !== 'off') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['duration_min'],
+        message: 'duration_min 0 is only legal on a day_type: off day',
+      });
+    }
+  });
 
 export const blockSchema = z
   .object({
