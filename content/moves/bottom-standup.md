@@ -1,15 +1,15 @@
 ---
 id: bottom-standup
-name: Stand-up
+name: "Stand-up"
 position: bottom
 category: escape
 tier: core
 status: scheduled
 priority: 1
 pods: [blue, gold, white]
-prerequisites: []
-chains_to: []
-countered_by: []
+prerequisites: [bottom-position, bottom-hand-fighting]
+chains_to: [bottom-hip-heist, bottom-switch]
+countered_by: [top-tight-waist-arm-chop, top-mat-return]
 sources:
   - label: Stand-up mechanics (placeholder — replace with your clip)
     provider: other

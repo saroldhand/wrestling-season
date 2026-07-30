@@ -97,11 +97,22 @@ export function seasonDays(): string[] {
   return days;
 }
 
+/** Human date for display, always evaluated in UTC so it matches the ISO day. */
+export function formatDay(
+  iso: string,
+  options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' }
+): string {
+  return new Intl.DateTimeFormat('en-US', { ...options, timeZone: 'UTC' }).format(toDate(iso));
+}
+
 /**
  * Default day_type for a date: holidays are `off`, Sundays get no practice
  * (null), everything else follows the weekly rhythm.
  */
 export function defaultDayType(iso: string): DayType | null {
   if (HOLIDAYS[iso]) return 'off';
+  // The evaluate weekend is assessment work, not competition, whatever the
+  // weekday rhythm says (still no Sunday practice).
+  if (blockFor(iso) === 'evaluate' && weekdayOf(iso) !== 0) return 'install';
   return DAY_TYPE_BY_WEEKDAY[weekdayOf(iso)];
 }

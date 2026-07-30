@@ -1,0 +1,106 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { POSITIONS } from '../lib/schemas.ts';
+
+const moves = await getCollection('moves');
+const p1 = moves.filter((m) => m.data.priority === 1);
+
+const groups = POSITIONS.map((position) => ({
+  position,
+  items: p1
+    .filter((m) => m.data.position === position)
+    .sort((a, b) => a.data.name.localeCompare(b.data.name)),
+})).filter((g) => g.items.length > 0);
+
+const MAX_PER_POSITION = 5;
+---
+
+<Layout title="System" description="What our team does — every priority-1 move.">
+  <header class="sys-head">
+    <h1>The System</h1>
+    <p class="muted">
+      {p1.length} priority-1 moves. This page is the answer to “what does our team do” — if it
+      stops fitting on one screen, it stopped being a system.
+    </p>
+  </header>
+
+  <div class="sys-grid">
+    {groups.map((g) => (
+      <section class={`sys-col${g.items.length > MAX_PER_POSITION ? ' over' : ''}`}>
+        <h2 class="sys-pos">
+          {g.position}
+          <span class="sys-count display">{g.items.length}</span>
+        </h2>
+        {g.items.length > MAX_PER_POSITION && (
+          <p class="flag">
+            {g.items.length} priority-1 moves in one position — that's not a system, that's a
+            wishlist. Demote something.
+          </p>
+        )}
+        <ul>
+          {g.items.map((m) => (
+            <li>
+              <a class="sys-move" href={`/moves/${m.data.id}/`}>
+                <span class="sys-name display">{m.data.name}</span>
+                <span class={`badge status-${m.data.status}`}>{m.data.status}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+</Layout>
+
+<style>
+  .sys-head { max-width: 60ch; }
+  .sys-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+  .sys-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .sys-pos {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 0.2rem;
+  }
+  .sys-count {
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+  }
+  .sys-col.over .sys-pos { border-color: var(--danger); }
+  .sys-col .flag { margin: 0.5rem 0; font-size: 0.92rem; }
+  .sys-move {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: var(--tap);
+    padding: 0.35rem 0.7rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-decoration: none;
+  }
+  .sys-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .status-backlog { color: var(--ink-soft); }
+  .status-scheduled { color: var(--refine); }
+  .status-installed { color: var(--score-green); }
+  .status-maintenance { color: var(--install); }
+  .status-retired { color: var(--line-strong); text-decoration: line-through; }
+</style>

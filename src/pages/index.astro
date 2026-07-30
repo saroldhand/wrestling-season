@@ -1,15 +1,286 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PracticeCard from '../components/PracticeCard.astro';
 import { getCollection } from 'astro:content';
+import { MOVE_STATUSES, POSITIONS } from '../lib/schemas.ts';
+import { SEASON_START, weekOf } from '../lib/season.ts';
 
-const moves = await getCollection('moves');
 const practices = await getCollection('practices');
+const moves = await getCollection('moves');
+const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+
+const sorted = [...practices].sort((a, b) => a.data.date.localeCompare(b.data.date));
+
+// Build-time "next practice"; a runtime script re-checks against the real
+// today (a static build can be days old) and swaps in a banner if it moved.
+const buildToday = new Date().toISOString().slice(0, 10);
+const next =
+  sorted.find((p) => p.data.date >= buildToday && p.data.day_type !== 'off') ??
+  sorted.find((p) => p.data.day_type !== 'off');
+
+// compact JSON for the runtime corrections
+const summaries = sorted.map((p) => ({
+  d: p.data.date,
+  t: p.data.day_type,
+  s: p.data.status,
+  n: p.data.primary.length,
+  w: p.data.week,
+}));
+
+// status rollup — date-independent
+const rollup = MOVE_STATUSES.map((status) => ({
+  status,
+  count: moves.filter((m) => m.data.status === status).length,
+}));
+
+// system summary — date-independent
+const p1 = moves.filter((m) => m.data.priority === 1);
+const p1ByPosition = POSITIONS.map((position) => ({
+  position,
+  count: p1.filter((m) => m.data.position === position).length,
+})).filter((x) => x.count > 0);
+const overloaded = p1ByPosition.filter((x) => x.count > 5);
 ---
 
-<Layout title="Dashboard">
-  <h1>Wrestling HQ</h1>
-  <p class="muted">
-    Scaffold is live: {moves.length} move(s), {practices.length} practice(s) in the vault.
-    Dashboard lands in Phase 4.
-  </p>
+<Layout title="Dashboard" description="Next practice, this week, and the state of the system.">
+  <h1 class="sr-only">Dashboard</h1>
+
+  <div class="dash">
+    <section class="dash-next">
+      <h2>Next practice</h2>
+      <p class="flag" id="next-moved" hidden>
+        The build is stale — actual next practice: <a id="next-moved-link" href="/calendar">see calendar</a>
+      </p>
+      {next ? (
+        <PracticeCard practice={next.data} moveNames={moveNames} compact />
+      ) : (
+        <p class="muted">No practices in the vault. Run <code>npm run seed</code>.</p>
+      )}
+    </section>
+
+    <div class="dash-side">
+      <section class="card" id="week-card">
+        <h2>This week</h2>
+        <ol class="week-strip" id="week-strip" data-season-start={SEASON_START}></ol>
+        <p class="muted" id="week-note">Season starts {SEASON_START}.</p>
+      </section>
+
+      <section class="card" id="flags-card">
+        <h2>Unfilled days</h2>
+        <p class="muted" id="flags-none">Nothing overdue.</p>
+        <ul class="flag-list" id="flag-list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>The system</h2>
+        <ul class="sys-summary">
+          {p1ByPosition.map((x) => (
+            <li>
+              <a href="/system">{x.position}</a>
+              <strong class={`display${x.count > 5 ? ' over' : ''}`}>{x.count}</strong>
+            </li>
+          ))}
+        </ul>
+        {overloaded.length > 0 && (
+          <p class="flag">
+            {overloaded.map((x) => x.position).join(', ')}: more than five priority-1 moves.
+          </p>
+        )}
+        <a class="btn board-link" href="/system">System board</a>
+      </section>
+
+      <section class="card">
+        <h2>Move pipeline</h2>
+        <ul class="rollup">
+          {rollup.map((r) => (
+            <li>
+              <a href={`/moves/?status=${r.status}`}>{r.status}</a>
+              <strong class="display">{r.count}</strong>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script type="application/json" id="practice-data" set:html={JSON.stringify(summaries)} />
 </Layout>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .dash {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+    margin-top: 0.75rem;
+  }
+  @media (max-width: 860px) {
+    .dash { grid-template-columns: 1fr; }
+  }
+  .dash-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .dash h2 { font-size: 1.25rem; }
+
+  .week-strip {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .week-strip:empty { display: none; }
+  .week-strip li a,
+  .week-strip li span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap);
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    text-decoration: none;
+    font-size: 0.8rem;
+    gap: 1px;
+    padding: 0.2rem 0;
+  }
+  .week-strip .dnum {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .week-strip .is-today a {
+    outline: 2.5px solid var(--ink);
+  }
+  .week-strip .rest span { color: var(--line-strong); }
+  .week-strip .overdue a { border-color: var(--danger); color: var(--danger); }
+  .week-strip .delivered a { border-color: var(--score-green); }
+
+  .flag-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .flag-list li a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0.3rem 0.7rem;
+    border: 1.5px solid var(--danger);
+    background: var(--flag-bg);
+    color: var(--danger);
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .sys-summary, .rollup {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .sys-summary li, .rollup li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 40px;
+    border-top: 1px solid var(--line);
+    gap: 0.5rem;
+  }
+  .sys-summary li:first-child, .rollup li:first-child { border-top: none; }
+  .sys-summary strong, .rollup strong { font-size: 1.2rem; }
+  .sys-summary .over { color: var(--danger); }
+  .board-link { margin-top: 0.6rem; }
+</style>
+
+<script>
+  type Summary = { d: string; t: string; s: string; n: number; w: number };
+  const data: Summary[] = JSON.parse(document.getElementById('practice-data')!.textContent!);
+  const byDate = new Map(data.map((p) => [p.d, p]));
+
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+  // --- next practice: flag if the build's pick is out of date -------------
+  const rendered = document.querySelector<HTMLElement>('.dash-next .practice-card')?.dataset.date;
+  const actualNext = data.find((p) => p.d >= today && p.t !== 'off');
+  if (actualNext && rendered && actualNext.d !== rendered) {
+    const banner = document.getElementById('next-moved')!;
+    const link = document.getElementById('next-moved-link') as HTMLAnchorElement;
+    link.href = `/practice/${actualNext.d}/`;
+    link.textContent = actualNext.d;
+    banner.hidden = false;
+  }
+
+  // --- this week strip ----------------------------------------------------
+  const strip = document.getElementById('week-strip')!;
+  const note = document.getElementById('week-note')!;
+  const seasonStart = (strip as HTMLElement).dataset.seasonStart!;
+  const anchorISO = today < seasonStart ? seasonStart : today;
+  const anchor = new Date(`${anchorISO}T00:00:00Z`);
+  const monday = new Date(anchor.getTime() - ((anchor.getUTCDay() + 6) % 7) * 86400000);
+  const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  let any = false;
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday.getTime() + i * 86400000);
+    const iso = day.toISOString().slice(0, 10);
+    const p = byDate.get(iso);
+    const li = document.createElement('li');
+    if (iso === today) li.classList.add('is-today');
+    if (p) {
+      any = true;
+      if (p.s === 'delivered') li.classList.add('delivered');
+      if (p.s === 'planned' && iso < today) li.classList.add('overdue');
+      const a = document.createElement('a');
+      a.href = `/practice/${iso}/`;
+      a.innerHTML = `<span class="dnum">${day.getUTCDate()}</span><span>${p.t === 'off' ? 'off' : p.t.slice(0, 4)}</span>`;
+      li.appendChild(a);
+    } else {
+      li.classList.add('rest');
+      li.innerHTML = `<span><span class="dnum">${day.getUTCDate()}</span><span>${DOW[i]}</span></span>`;
+    }
+    strip.appendChild(li);
+  }
+  note.textContent = any
+    ? today < seasonStart
+      ? `Pre-season — showing the opening week (${seasonStart}).`
+      : ''
+    : 'No practices this week.';
+  if (!note.textContent) note.remove();
+
+  // --- unfilled past days -------------------------------------------------
+  const overdue = data.filter((p) => p.s === 'planned' && p.t !== 'off' && p.d < today);
+  if (overdue.length > 0) {
+    document.getElementById('flags-none')!.remove();
+    const list = document.getElementById('flag-list')!;
+    for (const p of overdue.slice(-14).reverse()) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = `/practice/${p.d}/`;
+      a.innerHTML = `<span>${p.d}</span><span>planned, never delivered</span>`;
+      li.appendChild(a);
+      list.appendChild(li);
+    }
+    if (overdue.length > 14) {
+      const more = document.createElement('p');
+      more.className = 'muted';
+      more.textContent = `…and ${overdue.length - 14} more on the calendar.`;
+      list.after(more);
+    }
+  }
+</script>
