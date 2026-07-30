@@ -10,7 +10,11 @@ pods: [blue, gold]
 prerequisites: [top-tight-waist-arm-chop]
 chains_to: [top-arm-bar]
 countered_by: []
-sources: []
+sources:
+  - label: Head lever breakdown — Frank Molinaro
+    provider: youtube
+    url: https://www.youtube.com/watch?v=vYNjNAe8QD0
+    notes: NCAA champ and Olympian on the lever as a breakdown.
 tags: [ride-system]
 ---
 

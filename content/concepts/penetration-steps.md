@@ -16,8 +16,10 @@ footwork before finishes.
 4. **Outside step sweep** — the sweep-single footwork; feeds
    [[neutral-head-inside-single]].
 
-Film: [4 penetration steps — Jeff Jordan](https://www.youtube.com/watch?v=KtIvCxsaFx4)
-(pointer only, per the source rules).
+Film (pointers only, per the source rules):
+
+- [4 penetration steps — Jeff Jordan](https://www.youtube.com/watch?v=KtIvCxsaFx4)
+- [Penetration step power leg — Cary Kolat](https://www.youtube.com/watch?v=voslHFyocNk)
 
 Standard progression: wall line reps → on the move → off a tie → under a
 live hand fight. Ten clean before fast, every day of [[install]].

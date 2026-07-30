@@ -10,7 +10,11 @@ pods: [blue, gold]
 prerequisites: [neutral-sprawl-front-headlock]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Down block and reattack — Vito Arujau
+    provider: youtube
+    url: https://www.youtube.com/watch?v=mfJvtdTWLjk
+    notes: FloWrestling Technique Tuesday — defense turning straight into offense.
 tags: [defense]
 ---
 

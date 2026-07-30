@@ -10,7 +10,11 @@ pods: [blue, gold, white]
 prerequisites: [neutral-single-leg]
 chains_to: []
 countered_by: [scramble-whizzer]
-sources: []
+sources:
+  - label: Horseshoe single-leg finish
+    provider: youtube
+    url: https://www.youtube.com/watch?v=Nhzz0BKc8js
+    notes: FloWrestling (Behind The Dirt) — the circling finish family this move lives in.
 tags: [attack-system]
 ---
 

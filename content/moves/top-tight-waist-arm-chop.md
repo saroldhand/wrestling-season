@@ -10,7 +10,15 @@ pods: [blue, gold, white]
 prerequisites: []
 chains_to: [top-half-nelson, top-two-on-one-tilt]
 countered_by: []
-sources: []
+sources:
+  - label: Tight waist chop breakdown — Matt McDonough
+    provider: youtube
+    url: https://www.youtube.com/watch?v=qwIItk1pjoU
+    notes: 3x NCAA finalist on exactly our first move on top.
+  - label: Tight waist / arm chop tips — Jon Trenge
+    provider: youtube
+    url: https://www.youtube.com/watch?v=4ICBzr1HXW8
+    notes: Clinic-format detail on the same breakdown.
 tags: [ride-system]
 ---
 

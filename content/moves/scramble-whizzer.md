@@ -11,7 +11,11 @@ pods: [blue, gold, white]
 prerequisites: []
 chains_to: [scramble-sprawl-spin]
 countered_by: []
-sources: []
+sources:
+  - label: Belly whizzer vs the single — Dave McFadden
+    provider: youtube
+    url: https://www.youtube.com/watch?v=jZWWnG_nhhw
+    notes: FCA Wrestling — the whizzer with hip pressure, not arm strength.
 tags: [defense]
 ---
 

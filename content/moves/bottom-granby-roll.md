@@ -10,7 +10,12 @@ pods: [gold]
 prerequisites: [bottom-hip-heist]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Granby roll — Alec Ortiz
+    provider: youtube
+    url: https://www.youtube.com/watch?v=4e11WTUVrfU
+    audience: [gold]
+    notes: JROB technique session; watch the neck position rules before drilling.
 tags: [escape-system]
 ---
 

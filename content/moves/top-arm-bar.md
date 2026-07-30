@@ -10,7 +10,15 @@ pods: [blue, gold]
 prerequisites: [top-tight-waist-arm-chop]
 chains_to: [top-half-nelson]
 countered_by: []
-sources: []
+sources:
+  - label: Arm bar base progression — Logan Stieber
+    provider: youtube
+    url: https://www.youtube.com/watch?v=KLYjpRARpfQ
+    notes: RUDIS — 4x NCAA champ; the progression is a whole wing-series install.
+  - label: "Arm bar series part 1: getting there — Logan Stieber"
+    provider: youtube
+    url: https://www.youtube.com/watch?v=cnXziAi9jh0
+    notes: RUDIS — entries first, which is where kids fail.
 tags: [ride-system, pinning]
 ---
 

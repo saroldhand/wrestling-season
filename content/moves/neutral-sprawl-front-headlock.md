@@ -11,7 +11,15 @@ pods: [blue, gold, white]
 prerequisites: [neutral-stance-motion]
 chains_to: [scramble-sprawl-spin]
 countered_by: []
-sources: []
+sources:
+  - label: Sprawl vs the sweep single — Cary Kolat
+    provider: youtube
+    url: https://www.youtube.com/watch?v=_DgYha4VWyg
+    notes: Kolat — the sprawl applied against the attack we will see most.
+  - label: Front headlock redirection — Kyle Snyder
+    provider: youtube
+    url: https://www.youtube.com/watch?v=DO3Y838WVnw
+    notes: RUDIS — moving them off the front headlock once the sprawl lands.
 tags: [defense]
 ---
 

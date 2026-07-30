@@ -10,7 +10,11 @@ pods: [blue, gold]
 prerequisites: [bottom-position]
 chains_to: []
 countered_by: [top-spiral-ride]
-sources: []
+sources:
+  - label: The perfect switch — Nomad
+    provider: youtube
+    url: https://www.youtube.com/watch?v=ZMHjJx_gu08
+    notes: FloWrestling — hip-angle detail on the switch.
 tags: [escape-system]
 ---
 

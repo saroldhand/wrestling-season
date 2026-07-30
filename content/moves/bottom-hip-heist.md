@@ -10,7 +10,11 @@ pods: [blue, gold]
 prerequisites: [bottom-position]
 chains_to: [bottom-switch]
 countered_by: []
-sources: []
+sources:
+  - label: Short sit hip heist cutaway — Nathan Tomasello
+    provider: youtube
+    url: https://www.youtube.com/watch?v=f4qpyHQsBgs
+    notes: RUDIS — the short-sit entry to the heist.
 tags: [escape-system]
 ---
 

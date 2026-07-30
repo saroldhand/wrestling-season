@@ -10,7 +10,15 @@ pods: [gold]
 prerequisites: [neutral-stance-motion]
 chains_to: []
 countered_by: [neutral-sprawl-front-headlock]
-sources: []
+sources:
+  - label: Fake ankle pick to a low single — Kyle Snyder
+    provider: youtube
+    url: https://www.youtube.com/watch?v=koIuQWJwmDo
+    notes: RUDIS — the fake-reaction entry.
+  - label: Fake arm drag to a low single — Kollin Moore
+    provider: youtube
+    url: https://www.youtube.com/watch?v=EqmzCopcF4s
+    notes: RUDIS — a second entry off a different fake.
 tags: [attack-system]
 ---
 

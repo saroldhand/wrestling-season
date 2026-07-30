@@ -10,7 +10,15 @@ pods: [blue, gold]
 prerequisites: [neutral-hand-fight]
 chains_to: []
 countered_by: [neutral-sprawl-front-headlock]
-sources: []
+sources:
+  - label: Double leg part 1 — Jordan Burroughs
+    provider: youtube
+    url: https://www.youtube.com/watch?v=BHNyCMUy6Rg
+    notes: RUDIS — the best double of his era; setups and the blast.
+  - label: Double leg part 2 — Jordan Burroughs
+    provider: youtube
+    url: https://www.youtube.com/watch?v=YOMwUNqROj4
+    notes: RUDIS — part 2, finishes and corrections.
 tags: [attack-system]
 ---
 

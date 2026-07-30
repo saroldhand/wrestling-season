@@ -10,7 +10,15 @@ pods: [blue, gold, white]
 prerequisites: [neutral-hand-fight]
 chains_to: [neutral-run-the-pipe, neutral-double-leg, neutral-high-crotch]
 countered_by: [scramble-whizzer, neutral-sprawl-front-headlock]
-sources: []
+sources:
+  - label: Finishing vs the shin whizzer — Kyle Snyder
+    provider: youtube
+    url: https://www.youtube.com/watch?v=AVIVDoU9eRI
+    notes: RUDIS — finishing the head-outside attack against the most common counter.
+  - label: Finishing when they sprawl — Cary Kolat
+    provider: youtube
+    url: https://www.youtube.com/watch?v=52XTt1JAYaY
+    notes: Kolat — chase the hips and build up when the first shot gets sprawled on.
 tags: [attack-system]
 ---
 

@@ -10,7 +10,11 @@ pods: [blue, gold]
 prerequisites: [top-tight-waist-arm-chop]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Two-on-one tilt — Bo Nickal
+    provider: youtube
+    url: https://www.youtube.com/watch?v=n31NOv0YU78
+    notes: Nickal teaching the exact wrist-trap tilt we bank near fall with.
 tags: [ride-system, pinning]
 ---
 

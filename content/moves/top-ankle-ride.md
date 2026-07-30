@@ -10,7 +10,12 @@ pods: [gold]
 prerequisites: [top-spiral-ride]
 chains_to: []
 countered_by: [bottom-standup, bottom-hip-heist]
-sources: []
+sources:
+  - label: Leg riding mechanics — Max Askren
+    provider: youtube
+    url: https://www.youtube.com/watch?v=g6IXD60nyD8
+    audience: [gold]
+    notes: Basics-first framing for the legs install; gold pod only.
 tags: [ride-system, leg-ride]
 ---
 

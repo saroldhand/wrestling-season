@@ -15,6 +15,10 @@ sources:
     provider: youtube
     url: https://www.youtube.com/watch?v=i-AMsFmy-wE
     notes: Jeff Jordan camp — snapping into the front headlock and moving them off it.
+  - label: Front headlock spin go-behind — Kyle Snyder
+    provider: youtube
+    url: https://www.youtube.com/watch?v=z4ItLsIaz1g
+    notes: FloWrestling camp footage — cashing the snap with the go-behind.
 tags: [attack-system, short-offense]
 ---
 

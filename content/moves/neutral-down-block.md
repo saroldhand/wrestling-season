@@ -16,6 +16,14 @@ sources:
     provider: youtube
     url: https://www.youtube.com/watch?v=FHoCRz2H91c
     notes: Jeff Jordan camp — first-line defense before the sprawl has to happen.
+  - label: Downblock technique — Kyle Snyder
+    provider: youtube
+    url: https://www.youtube.com/watch?v=PbT2MVfBjk4
+    notes: RUDIS — the first-line defense, from the best defensive wrestler of his era.
+  - label: The down block — J'den Cox
+    provider: youtube
+    url: https://www.youtube.com/watch?v=a17OSLRRRsc
+    notes: World champ's angle on the same block.
 tags: [defense]
 ---
 

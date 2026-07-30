@@ -10,7 +10,15 @@ pods: [gold]
 prerequisites: [neutral-hand-fight]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Duck under — Nathan Tomasello
+    provider: youtube
+    url: https://www.youtube.com/watch?v=YsvKiBMZ7ns
+    notes: RUDIS — clean fundamentals breakdown off the collar tie.
+  - label: Keys to the duck under — John Smith
+    provider: youtube
+    url: https://www.youtube.com/watch?v=qz4CbdryyJc
+    notes: John Smith clinic clip — the elbow lift detail is the whole move.
 tags: [attack-system]
 ---
 

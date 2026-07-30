@@ -10,7 +10,11 @@ pods: [blue, gold, white]
 prerequisites: []
 chains_to: [neutral-hand-fight]
 countered_by: []
-sources: []
+sources:
+  - label: Stance and motion drills
+    provider: youtube
+    url: https://www.youtube.com/watch?v=tyU-QaV8MnI
+    notes: The School of Wrestling Technique — dedicated stance/motion drill set for warm-ups.
 tags: [attack-system]
 ---
 

@@ -10,7 +10,17 @@ pods: [gold]
 prerequisites: [scramble-whizzer]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: The funk roll — Jesse Delgado
+    provider: youtube
+    url: https://www.youtube.com/watch?v=sFPh9C565gI
+    audience: [gold]
+    notes: FloWrestling — NCAA champ explains his funk.
+  - label: Funk roll defense — Cary Kolat
+    provider: youtube
+    url: https://www.youtube.com/watch?v=A2U3YmP6VRs
+    audience: [gold]
+    notes: "The other side: killing the funk off our own head-inside single."
 tags: [defense]
 ---
 

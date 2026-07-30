@@ -11,7 +11,11 @@ pods: [blue, gold, white]
 prerequisites: [neutral-stance-motion]
 chains_to: [neutral-sprawl-front-headlock]
 countered_by: []
-sources: []
+sources:
+  - label: Crossface, gas pedal, and facelift
+    provider: youtube
+    url: https://www.youtube.com/watch?v=oyz5XTCqiXU
+    notes: Leg-attack defense breakdown that matches our weight-on-the-leg rule.
 tags: [defense]
 ---
 

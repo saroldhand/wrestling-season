@@ -62,3 +62,10 @@ commit to teaching it.
 - **Breakdowns / tilts / bottom moves** — headings reserved on the paper;
   current answers are [[top-tight-waist-arm-chop]], [[top-two-on-one-tilt]],
   and the [[bottom-standup|escape chain]].
+
+## Film shelf
+
+Nearly every move above now carries clips from the RUDIS and FloWrestling
+YouTube channels (plus Kolat, FCA, and JROB where those two had no match) —
+open any move page and the film is in the sidebar. For browsing beyond the
+system: [FloWrestling's Technique Archives playlist](https://www.youtube.com/playlist?list=PLMVwHRxOFNq9DQrSRVyYfJZHpU9UNKc6l).

@@ -10,7 +10,11 @@ pods: [blue, gold, white]
 prerequisites: [bottom-position]
 chains_to: [bottom-standup]
 countered_by: []
-sources: []
+sources:
+  - label: Clearing wrist control — Cary Kolat
+    provider: youtube
+    url: https://www.youtube.com/watch?v=7mM-OnU8Wh4
+    notes: Kolat's dedicated wrist-clearing drill from bottom — our grip-strip series.
 tags: [escape-system]
 ---
 

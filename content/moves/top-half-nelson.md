@@ -10,7 +10,15 @@ pods: [blue, gold, white]
 prerequisites: [top-tight-waist-arm-chop]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Half nelson — folkstyle core curriculum
+    provider: youtube
+    url: https://www.youtube.com/watch?v=5DFJOOs-eVQ
+    notes: Fundamentals-level half for the install day; blue and white pods first.
+  - label: Running the half when they fight it
+    provider: youtube
+    url: https://www.youtube.com/watch?v=UcWMPl8unco
+    notes: Covers the peel fight — the failure point once opponents know it is coming.
 tags: [ride-system, pinning]
 ---
 

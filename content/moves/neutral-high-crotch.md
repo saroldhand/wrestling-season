@@ -10,7 +10,15 @@ pods: [blue, gold]
 prerequisites: [neutral-single-leg]
 chains_to: [neutral-double-leg]
 countered_by: [scramble-whizzer]
-sources: []
+sources:
+  - label: Post to a high crotch — Isaiah Martínez
+    provider: youtube
+    url: https://www.youtube.com/watch?v=F1k0xPqQmHw
+    notes: RUDIS — hand-fight post entry, exactly how we teach it off inside control.
+  - label: Club into a post high crotch — Nathan Tomasello
+    provider: youtube
+    url: https://www.youtube.com/watch?v=z3Ml4NKmnb8
+    notes: RUDIS — second setup into the same attack.
 tags: [attack-system]
 ---
 

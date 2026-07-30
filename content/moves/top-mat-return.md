@@ -10,7 +10,15 @@ pods: [blue, gold, white]
 prerequisites: [top-tight-waist-arm-chop]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Mat returns — Dustin Plott
+    provider: youtube
+    url: https://www.youtube.com/watch?v=3pmXYnzgpTI
+    notes: Technique Tuesday — six returns for when bottom builds to their feet.
+  - label: Rear standing mat return — Tom Brands
+    provider: youtube
+    url: https://www.youtube.com/watch?v=THrT1WL_11o
+    notes: Brands on the rear-standing position, the exact spot after a stand-up.
 tags: [ride-system]
 ---
 

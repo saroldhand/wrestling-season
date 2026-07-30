@@ -11,12 +11,14 @@ prerequisites: [bottom-position, bottom-hand-fighting]
 chains_to: [bottom-hip-heist, bottom-switch]
 countered_by: [top-tight-waist-arm-chop, top-mat-return]
 sources:
-  - label: Stand-up mechanics (placeholder — replace with your clip)
-    provider: other
-    url: https://example.com/standup-mechanics
-    timestamp: "2:14"
-    audience: [gold, white]
-    notes: Placeholder entry proving the sources pipeline. Swap for a real clip.
+  - label: Stand-up escape basics
+    provider: youtube
+    url: https://www.youtube.com/watch?v=g6XGABVzZ4E
+    notes: FloWrestling beginner bottom series — the install-day teach.
+  - label: Elbow-in seal-off stand-up
+    provider: youtube
+    url: https://www.youtube.com/watch?v=Yua9AOto2xI
+    notes: FloWrestling — the seal-off variation once the base version holds.
 tags: [escape-system]
 ---
 

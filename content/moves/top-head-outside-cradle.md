@@ -10,7 +10,15 @@ pods: [blue, gold]
 prerequisites: [top-tight-waist-arm-chop]
 chains_to: []
 countered_by: []
-sources: []
+sources:
+  - label: Far ankle cradle — Cary Kolat
+    provider: youtube
+    url: https://www.youtube.com/watch?v=BILHBiaGN5g
+    notes: RUDIS — Kolat's far-side cradle off forward pressure.
+  - label: Crossface cradle — Mark Hall
+    provider: youtube
+    url: https://www.youtube.com/watch?v=jWGIrfxBvuY
+    notes: FCA Wrestling — the crossface entry HS kids hit most.
 tags: [ride-system, pinning]
 ---
 

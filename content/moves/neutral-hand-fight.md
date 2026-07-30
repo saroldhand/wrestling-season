@@ -15,6 +15,10 @@ sources:
     provider: youtube
     url: https://www.youtube.com/watch?v=0hbCr12yMtg
     notes: Kyle Snyder (RUDIS) — winning inside position; pairs with the tie taxonomy.
+  - label: Inside wrist tie — Jason Welch
+    provider: youtube
+    url: https://www.youtube.com/watch?v=MJELaOYNg9M
+    notes: RUDIS — a specific inside tie from 3x All-American Jason Welch; pairs with the Snyder clip.
 tags: [attack-system]
 ---
 

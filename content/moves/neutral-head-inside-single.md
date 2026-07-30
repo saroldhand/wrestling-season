@@ -24,6 +24,14 @@ sources:
     provider: youtube
     url: https://www.youtube.com/watch?v=w0n7T4sPLDg
     notes: Jeff Jordan camp — the drilling progression for the same finish.
+  - label: Misdirection to a sweep single — Isaiah Martínez
+    provider: youtube
+    url: https://www.youtube.com/watch?v=ACOVMNtzVcc
+    notes: RUDIS — 2x NCAA champ on the entry; this is our sweep-entry look.
+  - label: Head inside single to a seat drop — Logan Stieber
+    provider: youtube
+    url: https://www.youtube.com/watch?v=6vARFyqa1A0
+    notes: RUDIS — 4x NCAA champ finishing the head-inside; complements chase-the-ankle.
 tags: [attack-system]
 ---
 
