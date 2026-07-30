@@ -8,7 +8,8 @@
  */
 const CACHE = '__CACHE_NAME__';
 const PRECACHE = __PRECACHE_MANIFEST__;
-const OFFLINE_URL = '/offline/';
+// scope-relative so the same worker serves at a domain root or a subpath
+const OFFLINE_URL = new URL('offline/', self.registration.scope).pathname;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

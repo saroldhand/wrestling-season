@@ -6,6 +6,7 @@
  */
 import type { Practice } from '../lib/schemas.ts';
 import { formatDay } from '../lib/season.ts';
+import { withBase } from '../lib/url.ts';
 
 interface Props {
   practice: Practice;
@@ -19,7 +20,7 @@ interface Props {
 
 const { practice: p, moveNames, compact = false, showDate = true } = Astro.props;
 
-const moveLink = (id: string) => ({ id, name: moveNames.get(id) ?? id, href: `/moves/${id}/` });
+const moveLink = (id: string) => ({ id, name: moveNames.get(id) ?? id, href: withBase(`/moves/${id}/`) });
 const primary = p.primary.map(moveLink);
 const spiral = p.spiral.map(moveLink);
 const film = p.film ? moveLink(p.film) : null;
@@ -31,7 +32,7 @@ const off = p.day_type === 'off';
   <header class="pc-head">
     <div class="pc-when">
       {compact ? (
-        <a class="pc-date display" href={`/practice/${p.date}/`}>{formatDay(p.date, { weekday: 'short', month: 'short', day: 'numeric' })}</a>
+        <a class="pc-date display" href={withBase(`/practice/${p.date}/`)}>{formatDay(p.date, { weekday: 'short', month: 'short', day: 'numeric' })}</a>
       ) : (
         showDate && <span class="pc-date display">{formatDay(p.date)}</span>
       )}
@@ -107,7 +108,7 @@ const off = p.day_type === 'off';
   )}
 
   {compact && (
-    <a class="btn pc-full no-print" href={`/practice/${p.date}/`}>Full practice page</a>
+    <a class="btn pc-full no-print" href={withBase(`/practice/${p.date}/`)}>Full practice page</a>
   )}
 </article>
 

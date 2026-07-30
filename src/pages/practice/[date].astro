@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import PracticeCard from '../../components/PracticeCard.astro';
 import { getCollection, render } from 'astro:content';
 import { formatDay } from '../../lib/season.ts';
+import { withBase } from '../../lib/url.ts';
 
 export async function getStaticPaths() {
   const practices = await getCollection('practices');
@@ -30,10 +31,10 @@ const hasNotes = entry.body && entry.body.trim().replace(/^## After-practice not
 
 <Layout title={`Practice ${p.date}`} description={`Practice plan for ${formatDay(p.date)}`}>
   <nav class="practice-nav no-print" aria-label="Practice navigation">
-    {prev ? <a class="btn" href={`/practice/${prev}/`}>← {prev}</a> : <span></span>}
-    <a class="btn" href={`/calendar#${p.date}`}>Calendar</a>
+    {prev ? <a class="btn" href={withBase(`/practice/${prev}/`)}>← {prev}</a> : <span></span>}
+    <a class="btn" href={withBase(`/calendar#${p.date}`)}>Calendar</a>
     <button type="button" class="btn" onclick="window.print()">Print</button>
-    {next ? <a class="btn" href={`/practice/${next}/`}>{next} →</a> : <span></span>}
+    {next ? <a class="btn" href={withBase(`/practice/${next}/`)}>{next} →</a> : <span></span>}
   </nav>
 
   <header class="practice-header">

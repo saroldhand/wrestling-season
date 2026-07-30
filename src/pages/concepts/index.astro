@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { CONCEPT_TYPES } from '../../lib/schemas.ts';
+import { withBase } from '../../lib/url.ts';
 
 const concepts = await getCollection('concepts');
 const groups = CONCEPT_TYPES.map((type) => ({
@@ -25,7 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
       <ul>
         {g.items.map((c) => (
           <li>
-            <a class="concept-link" href={`/concepts/${c.data.id}/`}>{c.data.name}</a>
+            <a class="concept-link" href={withBase(`/concepts/${c.data.id}/`)}>{c.data.name}</a>
           </li>
         ))}
       </ul>

@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { POSITIONS } from '../lib/schemas.ts';
+import { withBase } from '../lib/url.ts';
 
 const moves = await getCollection('moves');
 const p1 = moves.filter((m) => m.data.priority === 1);
@@ -41,7 +42,7 @@ const MAX_PER_POSITION = 5;
         <ul>
           {g.items.map((m) => (
             <li>
-              <a class="sys-move" href={`/moves/${m.data.id}/`}>
+              <a class="sys-move" href={withBase(`/moves/${m.data.id}/`)}>
                 <span class="sys-name display">{m.data.name}</span>
                 <span class={`badge status-${m.data.status}`}>{m.data.status}</span>
               </a>

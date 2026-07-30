@@ -6,6 +6,7 @@ import '@fontsource/barlow-condensed/600.css';
 import '@fontsource/barlow-condensed/700.css';
 import '../styles/global.css';
 import { SEASON } from '../lib/season.ts';
+import { withBase } from '../lib/url.ts';
 
 interface Props {
   title: string;
@@ -22,7 +23,8 @@ const nav = [
   { href: '/concepts', label: 'Concepts' },
 ];
 
-const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const base = withBase('');
+const path = (Astro.url.pathname.startsWith(base) ? Astro.url.pathname.slice(base.length) : Astro.url.pathname).replace(/\/$/, '') || '/';
 const isCurrent = (href: string) =>
   href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
 ---
@@ -33,20 +35,20 @@ const isCurrent = (href: string) =>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#16191d" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <link rel="manifest" href={withBase('/manifest.webmanifest')} />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={withBase('/icons/icon-180.png')} />
     <title>{title} · Wrestling HQ</title>
   </head>
   <body>
     <header class="site-header no-print">
       <div class="bar">
-        <a class="wordmark" href="/">
+        <a class="wordmark" href={withBase('/')}>
           Wrestling HQ <span class="season">{SEASON}</span>
         </a>
         <nav class="site-nav" aria-label="Main">
           {nav.map((item) => (
-            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+            <a href={item.href === '/' ? withBase('/') : withBase(item.href)} aria-current={isCurrent(item.href) ? 'page' : undefined}>
               {item.label}
             </a>
           ))}
@@ -60,8 +62,9 @@ const isCurrent = (href: string) =>
       Wrestling HQ · folkstyle {SEASON} · plans are written in the room, not here
     </footer>
     <script>
+      import { withBase } from '../lib/url.ts';
       if ('serviceWorker' in navigator && !import.meta.env.DEV) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register(withBase('/sw.js')).catch(() => {});
       }
     </script>
   </body>

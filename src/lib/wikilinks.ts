@@ -19,11 +19,15 @@ import { visit } from 'unist-util-visit';
 
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
 
+// Runs at config-load time, before Vite defines import.meta.env — read the
+// same BASE_PATH variable astro.config.mjs uses for `base`.
+const BASE = (process.env.BASE_PATH ?? '').replace(/\/+$/, '');
+
 const URL_BY_DIR: Record<string, (id: string) => string> = {
-  moves: (id) => `/moves/${id}/`,
-  concepts: (id) => `/concepts/${id}/`,
-  practices: (id) => `/practice/${id}/`,
-  blocks: (id) => `/calendar#block-${id}`,
+  moves: (id) => `${BASE}/moves/${id}/`,
+  concepts: (id) => `${BASE}/concepts/${id}/`,
+  practices: (id) => `${BASE}/practice/${id}/`,
+  blocks: (id) => `${BASE}/calendar#block-${id}`,
 };
 
 let idMap: Map<string, string> | null = null;

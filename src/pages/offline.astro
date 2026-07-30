@@ -1,12 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { withBase } from '../lib/url.ts';
 ---
 
 <Layout title="Offline" description="No connection.">
   <h1>No Signal In The Gym</h1>
   <p>
     This page isn't cached yet and the wifi is gone. Anything you've opened before —
-    the <a href="/calendar">calendar</a>, practices, the <a href="/moves/">move library</a> —
+    the <a href={withBase('/calendar')}>calendar</a>, practices, the <a href={withBase('/moves/')}>move library</a> —
     still works offline.
   </p>
 </Layout>

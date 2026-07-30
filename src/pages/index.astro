@@ -4,6 +4,7 @@ import PracticeCard from '../components/PracticeCard.astro';
 import { getCollection } from 'astro:content';
 import { MOVE_STATUSES, POSITIONS } from '../lib/schemas.ts';
 import { SEASON_START, weekOf } from '../lib/season.ts';
+import { withBase } from '../lib/url.ts';
 
 const practices = await getCollection('practices');
 const moves = await getCollection('moves');
@@ -49,7 +50,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
     <section class="dash-next">
       <h2>Next practice</h2>
       <p class="flag" id="next-moved" hidden>
-        The build is stale — actual next practice: <a id="next-moved-link" href="/calendar">see calendar</a>
+        The build is stale — actual next practice: <a id="next-moved-link" href={withBase('/calendar')}>see calendar</a>
       </p>
       {next ? (
         <PracticeCard practice={next.data} moveNames={moveNames} compact />
@@ -76,7 +77,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
         <ul class="sys-summary">
           {p1ByPosition.map((x) => (
             <li>
-              <a href="/system">{x.position}</a>
+              <a href={withBase('/system')}>{x.position}</a>
               <strong class={`display${x.count > 5 ? ' over' : ''}`}>{x.count}</strong>
             </li>
           ))}
@@ -86,7 +87,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
             {overloaded.map((x) => x.position).join(', ')}: more than five priority-1 moves.
           </p>
         )}
-        <a class="btn board-link" href="/system">System board</a>
+        <a class="btn board-link" href={withBase('/system')}>System board</a>
       </section>
 
       <section class="card">
@@ -94,7 +95,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
         <ul class="rollup">
           {rollup.map((r) => (
             <li>
-              <a href={`/moves/?status=${r.status}`}>{r.status}</a>
+              <a href={withBase(`/moves/?status=${r.status}`)}>{r.status}</a>
               <strong class="display">{r.count}</strong>
             </li>
           ))}
@@ -209,6 +210,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
 </style>
 
 <script>
+  import { withBase } from '../lib/url.ts';
   type Summary = { d: string; t: string; s: string; n: number; w: number };
   const data: Summary[] = JSON.parse(document.getElementById('practice-data')!.textContent!);
   const byDate = new Map(data.map((p) => [p.d, p]));
@@ -222,7 +224,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
   if (actualNext && rendered && actualNext.d !== rendered) {
     const banner = document.getElementById('next-moved')!;
     const link = document.getElementById('next-moved-link') as HTMLAnchorElement;
-    link.href = `/practice/${actualNext.d}/`;
+    link.href = withBase(`/practice/${actualNext.d}/`);
     link.textContent = actualNext.d;
     banner.hidden = false;
   }
@@ -247,7 +249,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
       if (p.s === 'delivered') li.classList.add('delivered');
       if (p.s === 'planned' && iso < today) li.classList.add('overdue');
       const a = document.createElement('a');
-      a.href = `/practice/${iso}/`;
+      a.href = withBase(`/practice/${iso}/`);
       a.innerHTML = `<span class="dnum">${day.getUTCDate()}</span><span>${p.t === 'off' ? 'off' : p.t.slice(0, 4)}</span>`;
       li.appendChild(a);
     } else {
@@ -271,7 +273,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
     for (const p of overdue.slice(-14).reverse()) {
       const li = document.createElement('li');
       const a = document.createElement('a');
-      a.href = `/practice/${p.d}/`;
+      a.href = withBase(`/practice/${p.d}/`);
       a.innerHTML = `<span>${p.d}</span><span>planned, never delivered</span>`;
       li.appendChild(a);
       list.appendChild(li);

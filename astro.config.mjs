@@ -27,8 +27,9 @@ function serviceWorker() {
             } else {
               const rel = '/' + path.relative(dist, full).split(path.sep).join('/');
               if (rel === '/sw.js') continue;
+              const prefix = (process.env.BASE_PATH ?? '').replace(/\/+$/, '');
               // pages precache under their clean URL; assets as-is
-              urls.push(rel.endsWith('/index.html') ? rel.slice(0, -'index.html'.length) : rel);
+              urls.push(prefix + (rel.endsWith('/index.html') ? rel.slice(0, -'index.html'.length) : rel));
             }
           }
         };
@@ -47,11 +48,17 @@ function serviceWorker() {
   };
 }
 
+// Base path: '/' locally and on Cloudflare; '/<repo>' on GitHub Pages
+// project sites. Set BASE_PATH in the deploy workflow; internal links go
+// through src/lib/url.ts, wikilinks read the same variable.
+const base = process.env.BASE_PATH?.replace(/\/+$/, '') || '/';
+
 // Static output, zero client framework. The only JS on the site is small
 // hand-written scripts (calendar drawer, library filters, service worker
 // registration) — gym wifi is the constraint that decides this.
 export default defineConfig({
   output: 'static',
+  base,
   trailingSlash: 'ignore',
   markdown: {
     remarkPlugins: [remarkWikilinks],

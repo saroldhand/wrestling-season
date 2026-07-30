@@ -1,19 +1,21 @@
-# OPT-IN GitHub Pages deploy — run manually from the Actions tab.
+# GitHub Pages deploy.
 #
-# Read §7 of the build spec before enabling: a GitHub Pages site is publicly
-# reachable on the internet EVEN IF this repository is private. That is a
-# defensible tradeoff for the technique library and practice structure; it is
-# not defensible for roster data. content/private/ is gitignored and never
-# built, so keep it that way.
+# Heads-up (§7 of the build spec): a GitHub Pages site is publicly reachable
+# on the internet EVEN IF this repository is private. That is a defensible
+# tradeoff for the technique library and practice structure; it is not
+# defensible for roster data. content/private/ is gitignored and never
+# built — keep it that way.
 #
-# The recommended private alternative is Cloudflare Pages + Cloudflare
-# Access (email-allowlist the staff): connect the repo in the Cloudflare
-# dashboard with build command `npm run build` and output dir `dist`, then
-# put an Access policy in front of the pages.dev domain. No workflow needed.
+# The private alternative is Cloudflare Pages + Cloudflare Access
+# (email-allowlist the staff): connect the repo in the Cloudflare dashboard
+# with build command `npm run build` and output dir `dist`, then put an
+# Access policy in front of the pages.dev domain. No workflow needed.
 name: Deploy to GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main, claude/wrestling-hq-build-qgjc0w]
 
 permissions:
   contents: read
@@ -29,13 +31,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run validate
+      # project sites serve under /<repo>/ — every internal URL goes through
+      # BASE_PATH (see astro.config.mjs and src/lib/url.ts)
       - run: npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist/

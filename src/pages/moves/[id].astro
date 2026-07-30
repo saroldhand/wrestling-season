@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
 import { formatDay } from '../../lib/season.ts';
 import { PROVIDERS } from '../../lib/schemas.ts';
+import { withBase } from '../../lib/url.ts';
 
 export async function getStaticPaths() {
   const moves = await getCollection('moves');
@@ -16,7 +17,7 @@ const { Content } = await render(entry);
 const moves = await getCollection('moves');
 const practices = await getCollection('practices');
 const names = new Map(moves.map((x) => [x.data.id, x.data.name]));
-const link = (id: string) => ({ id, name: names.get(id) ?? id, href: `/moves/${id}/` });
+const link = (id: string) => ({ id, name: names.get(id) ?? id, href: withBase(`/moves/${id}/`) });
 
 // forward relations from this file, reverse relations computed from the library
 const rel = {
@@ -147,7 +148,7 @@ const sourceGroups = PROVIDERS.map((provider) => ({
           <ul class="taught">
             {taughtOn.map((t) => (
               <li>
-                <a href={`/practice/${t.date}/`}>{formatDay(t.date, { weekday: 'short', month: 'short', day: 'numeric' })}</a>
+                <a href={withBase(`/practice/${t.date}/`)}>{formatDay(t.date, { weekday: 'short', month: 'short', day: 'numeric' })}</a>
                 <span class="muted">{t.roles.join(' + ')}{t.status === 'delivered' ? ' ✓' : ''}</span>
               </li>
             ))}

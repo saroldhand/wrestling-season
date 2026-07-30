@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
 import { formatDay } from '../../lib/season.ts';
+import { withBase } from '../../lib/url.ts';
 
 export async function getStaticPaths() {
   const concepts = await getCollection('concepts');
@@ -21,10 +22,10 @@ for (const name of collections) {
   for (const other of entries) {
     if (name === 'concepts' && other.id === c.id) continue;
     if (!needle.test(other.body ?? '')) continue;
-    if (name === 'moves') backlinks.push({ name: (other.data as any).name, href: `/moves/${other.id}/`, kind: 'move' });
-    else if (name === 'concepts') backlinks.push({ name: (other.data as any).name, href: `/concepts/${other.id}/`, kind: 'concept' });
-    else if (name === 'blocks') backlinks.push({ name: (other.data as any).name, href: `/calendar#block-${other.id}`, kind: 'block' });
-    else backlinks.push({ name: formatDay(other.id, { month: 'short', day: 'numeric' }), href: `/practice/${other.id}/`, kind: 'practice' });
+    if (name === 'moves') backlinks.push({ name: (other.data as any).name, href: withBase(`/moves/${other.id}/`), kind: 'move' });
+    else if (name === 'concepts') backlinks.push({ name: (other.data as any).name, href: withBase(`/concepts/${other.id}/`), kind: 'concept' });
+    else if (name === 'blocks') backlinks.push({ name: (other.data as any).name, href: withBase(`/calendar#block-${other.id}`), kind: 'block' });
+    else backlinks.push({ name: formatDay(other.id, { month: 'short', day: 'numeric' }), href: withBase(`/practice/${other.id}/`), kind: 'practice' });
   }
 }
 ---

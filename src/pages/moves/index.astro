@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { POSITIONS, CATEGORIES, TIERS, MOVE_STATUSES, PODS } from '../../lib/schemas.ts';
+import { withBase } from '../../lib/url.ts';
 
 const moves = await getCollection('moves');
 
@@ -76,7 +77,7 @@ const filterGroups = [
         data-pods={m.data.pods.join(' ')}
         data-search={searchText(m)}
       >
-        <a class="move-link" href={`/moves/${m.data.id}/`}>
+        <a class="move-link" href={withBase(`/moves/${m.data.id}/`)}>
           <span class={`prio display p${m.data.priority}`}>P{m.data.priority}</span>
           <span class="move-name display">{m.data.name}</span>
           <span class="move-meta">
