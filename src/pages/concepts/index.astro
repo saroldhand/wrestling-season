@@ -1,0 +1,58 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { CONCEPT_TYPES } from '../../lib/schemas.ts';
+
+const concepts = await getCollection('concepts');
+const groups = CONCEPT_TYPES.map((type) => ({
+  type,
+  items: concepts.filter((c) => c.data.type === type).sort((a, b) => a.data.name.localeCompare(b.data.name)),
+})).filter((g) => g.items.length > 0);
+
+const TYPE_LABEL: Record<string, string> = {
+  rule: 'Rules',
+  principle: 'Principles',
+  drill: 'Drills',
+  protocol: 'Protocols',
+};
+---
+
+<Layout title="Concepts" description="Rules, principles, drills, and protocols.">
+  <h1>Concepts</h1>
+  {groups.map((g) => (
+    <section class="concept-group">
+      <h2>{TYPE_LABEL[g.type]}</h2>
+      <ul>
+        {g.items.map((c) => (
+          <li>
+            <a class="concept-link" href={`/concepts/${c.data.id}/`}>{c.data.name}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Layout>
+
+<style>
+  .concept-group { margin-bottom: 1.5rem; }
+  .concept-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .concept-link {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0.4rem 0.9rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+</style>

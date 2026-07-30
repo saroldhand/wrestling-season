@@ -1,0 +1,276 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+import { formatDay } from '../../lib/season.ts';
+import { PROVIDERS } from '../../lib/schemas.ts';
+
+export async function getStaticPaths() {
+  const moves = await getCollection('moves');
+  return moves.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const m = entry.data;
+const { Content } = await render(entry);
+
+const moves = await getCollection('moves');
+const practices = await getCollection('practices');
+const names = new Map(moves.map((x) => [x.data.id, x.data.name]));
+const link = (id: string) => ({ id, name: names.get(id) ?? id, href: `/moves/${id}/` });
+
+// forward relations from this file, reverse relations computed from the library
+const rel = {
+  prerequisites: m.prerequisites.map(link),
+  chains_to: m.chains_to.map(link),
+  countered_by: m.countered_by.map(link),
+  chains_from: moves.filter((x) => x.data.chains_to.includes(m.id)).map((x) => link(x.data.id)),
+  counters: moves.filter((x) => x.data.countered_by.includes(m.id)).map((x) => link(x.data.id)),
+  prerequisite_of: moves.filter((x) => x.data.prerequisites.includes(m.id)).map((x) => link(x.data.id)),
+};
+
+const relationRows: { label: string; items: { id: string; name: string; href: string }[] }[] = [
+  { label: 'Prerequisites', items: rel.prerequisites },
+  { label: 'Chains to', items: rel.chains_to },
+  { label: 'Chains from', items: rel.chains_from },
+  { label: 'Countered by', items: rel.countered_by },
+  { label: 'Counters', items: rel.counters },
+  { label: 'Prerequisite of', items: rel.prerequisite_of },
+].filter((row) => row.items.length > 0);
+
+// "taught on" backlinks generated from the practices that reference this id
+const taughtOn = practices
+  .map((p) => {
+    const roles: string[] = [];
+    if (p.data.primary.includes(m.id)) roles.push('primary');
+    if (p.data.spiral.includes(m.id)) roles.push('spiral');
+    if (p.data.film === m.id) roles.push('film');
+    return roles.length ? { date: p.data.date, status: p.data.status, roles } : null;
+  })
+  .filter((x): x is NonNullable<typeof x> => x !== null)
+  .sort((a, b) => a.date.localeCompare(b.date));
+
+const PROVIDER_LABEL: Record<string, string> = {
+  rudis: 'RUDIS',
+  ocean: 'Ocean',
+  flo: 'FloWrestling',
+  usaw: 'USA Wrestling',
+  youtube: 'YouTube',
+  other: 'Other',
+};
+const sourceGroups = PROVIDERS.map((provider) => ({
+  provider,
+  label: PROVIDER_LABEL[provider],
+  items: m.sources.filter((s) => s.provider === provider),
+})).filter((g) => g.items.length > 0);
+---
+
+<Layout title={m.name} description={`${m.name} — ${m.position} ${m.category}`}>
+  <header class="move-header">
+    <h1>{m.name}</h1>
+    <p class="move-badges">
+      <span class={`prio-badge display ${m.priority === 1 ? 'p1' : ''}`}>P{m.priority}</span>
+      <span class="badge">{m.position}</span>
+      <span class="badge">{m.category}</span>
+      <span class="badge">{m.tier}</span>
+      <span class={`badge status-${m.status}`}>{m.status}</span>
+      {m.pods.length > 0 && (
+        <span class="pods">
+          {m.pods.map((pod) => (
+            <span class={`pod-dot pod-${pod}`} title={`${pod} pod`}></span>
+          ))}
+        </span>
+      )}
+    </p>
+    {m.first_taught && <p class="muted">First taught {formatDay(m.first_taught)}.</p>}
+    {m.tags.length > 0 && <p class="muted tags">{m.tags.map((t) => `#${t}`).join('  ')}</p>}
+  </header>
+
+  <div class="move-grid">
+    <article class="prose">
+      <Content />
+    </article>
+
+    <aside class="move-side">
+      {relationRows.length > 0 && (
+        <section class="card">
+          <h3>Relationships</h3>
+          <dl class="rel">
+            {relationRows.map((row) => (
+              <>
+                <dt>{row.label}</dt>
+                <dd>
+                  {row.items.map((item) => (
+                    <a class="chip" href={item.href}>{item.name}</a>
+                  ))}
+                </dd>
+              </>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {sourceGroups.length > 0 && (
+        <section class="card">
+          <h3>Film &amp; sources</h3>
+          <p class="muted small">Pointers only — links open the provider; nothing is re-hosted.</p>
+          {sourceGroups.map((group) => (
+            <div class="source-group">
+              <h4 class="display">{group.label}</h4>
+              <ul>
+                {group.items.map((s) => (
+                  <li>
+                    <a href={s.url} rel="noopener external">
+                      {s.label}
+                      {s.timestamp && <span class="muted"> @ {s.timestamp}</span>}
+                    </a>
+                    {s.audience && s.audience.length > 0 && (
+                      <span class="aud">
+                        {s.audience.map((pod) => (
+                          <span class={`pod-dot pod-${pod}`} title={`${pod} pod`}></span>
+                        ))}
+                      </span>
+                    )}
+                    {s.notes && <p class="muted small">{s.notes}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <section class="card">
+        <h3>Taught on</h3>
+        {taughtOn.length === 0 ? (
+          <p class="muted">Not on a practice yet.</p>
+        ) : (
+          <ul class="taught">
+            {taughtOn.map((t) => (
+              <li>
+                <a href={`/practice/${t.date}/`}>{formatDay(t.date, { weekday: 'short', month: 'short', day: 'numeric' })}</a>
+                <span class="muted">{t.roles.join(' + ')}{t.status === 'delivered' ? ' ✓' : ''}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </aside>
+  </div>
+</Layout>
+
+<style>
+  .move-header { margin-bottom: 1rem; }
+  .move-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.4rem;
+  }
+  .prio-badge {
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.05em 0.45em;
+    border: 2px solid var(--ink);
+    border-radius: 3px;
+  }
+  .prio-badge.p1 { background: var(--ink); color: var(--paper); }
+  .tags { letter-spacing: 0.03em; }
+
+  .move-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .move-grid { grid-template-columns: 1fr; }
+  }
+  .move-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .rel {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .rel dt {
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    margin-top: 0.35rem;
+  }
+  .rel dd {
+    margin: 0.15rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 0.7rem;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    background: var(--card);
+  }
+
+  .source-group h4 {
+    margin: 0.6rem 0 0.2rem;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .source-group ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .source-group li { margin: 0.3rem 0; }
+  .small { font-size: 0.88rem; }
+  .aud { margin-left: 0.35rem; }
+
+  .pod-dot {
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    border-radius: 50%;
+    margin-right: 2px;
+  }
+  .pod-blue { background: var(--install); }
+  .pod-gold { background: var(--refine); }
+  .pod-white { background: #fff; border: 1.5px solid var(--ink); }
+
+  .taught {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .taught li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .taught li:first-child { border-top: none; }
+
+  .status-backlog { color: var(--ink-soft); }
+  .status-scheduled { color: var(--refine); }
+  .status-installed { color: var(--score-green); }
+  .status-maintenance { color: var(--install); }
+  .status-retired { color: var(--line-strong); text-decoration: line-through; }
+</style>

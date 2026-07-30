@@ -9,14 +9,14 @@ priority: 3
 pods: [gold]
 prerequisites: [top-spiral-ride]
 chains_to: []
-countered_by: []
+countered_by: [bottom-standup, bottom-hip-heist]
 sources: []
-tags: [ride-system]
+tags: [ride-system, leg-ride]
 ---
 
 ## Coaching points
 
-- Pick the ankle to the thigh and keep your hips heavy across the body.
+- A leg ride is a commitment: pick the ankle to the thigh and keep your hips heavy across the body.
 - It's a control ride — use it to kill time or set the turn, not to rest.
 - Release and rebuild rather than getting stretched out and reversed.
 

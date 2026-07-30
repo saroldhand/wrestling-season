@@ -1,0 +1,287 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { POSITIONS, CATEGORIES, TIERS, MOVE_STATUSES, PODS } from '../../lib/schemas.ts';
+
+const moves = await getCollection('moves');
+
+const POSITION_ORDER = Object.fromEntries(POSITIONS.map((p, i) => [p, i]));
+const sorted = [...moves].sort(
+  (a, b) =>
+    a.data.priority - b.data.priority ||
+    POSITION_ORDER[a.data.position] - POSITION_ORDER[b.data.position] ||
+    a.data.name.localeCompare(b.data.name)
+);
+
+/** name + tags + the Coaching points section, flattened for client-side search */
+function searchText(entry: (typeof moves)[number]): string {
+  const section = /## Coaching points([\s\S]*?)(?=\n## |$)/.exec(entry.body ?? '')?.[1] ?? '';
+  return [entry.data.name, entry.data.id, entry.data.position, entry.data.category, entry.data.tags.join(' '), section]
+    .join(' ')
+    .replace(/[\[\]#*`|-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .slice(0, 600);
+}
+
+const filterGroups = [
+  { key: 'position', label: 'Position', options: POSITIONS },
+  { key: 'category', label: 'Category', options: CATEGORIES },
+  { key: 'tier', label: 'Tier', options: TIERS },
+  { key: 'status', label: 'Status', options: MOVE_STATUSES },
+  { key: 'pod', label: 'Pod', options: PODS },
+] as const;
+---
+
+<Layout title="Moves" description="The move library — every technique in the system.">
+  <h1>Move Library</h1>
+
+  <form class="filters no-print" id="filters" role="search" aria-label="Filter moves">
+    <input
+      type="search"
+      id="q"
+      name="q"
+      placeholder="Search name, tags, coaching points…"
+      autocomplete="off"
+    />
+    {filterGroups.map((group) => (
+      <fieldset>
+        <legend>{group.label}</legend>
+        <div class="chips">
+          {group.options.map((opt) => (
+            <label class="filter-chip">
+              <input type="radio" name={group.key} value={opt} />
+              <span>{opt}</span>
+            </label>
+          ))}
+          <label class="filter-chip all">
+            <input type="radio" name={group.key} value="" checked />
+            <span>all</span>
+          </label>
+        </div>
+      </fieldset>
+    ))}
+    <p class="count muted" id="count" role="status" aria-live="polite"></p>
+  </form>
+
+  <ol class="move-list" id="move-list">
+    {sorted.map((m) => (
+      <li
+        class="move-row"
+        data-position={m.data.position}
+        data-category={m.data.category}
+        data-tier={m.data.tier}
+        data-status={m.data.status}
+        data-pods={m.data.pods.join(' ')}
+        data-search={searchText(m)}
+      >
+        <a class="move-link" href={`/moves/${m.data.id}/`}>
+          <span class={`prio display p${m.data.priority}`}>P{m.data.priority}</span>
+          <span class="move-name display">{m.data.name}</span>
+          <span class="move-meta">
+            <span class="badge">{m.data.position}</span>
+            <span class="badge">{m.data.category}</span>
+            <span class={`badge status-${m.data.status}`}>{m.data.status}</span>
+          </span>
+        </a>
+      </li>
+    ))}
+  </ol>
+  <p class="muted" id="empty" hidden>Nothing matches — clear a filter or two.</p>
+</Layout>
+
+<style>
+  .filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  #q {
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 0.6rem 0.9rem;
+    min-height: var(--tap);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--card);
+    width: 100%;
+    max-width: 34rem;
+  }
+  #q:focus-visible {
+    outline: 3px solid var(--install);
+    outline-offset: 2px;
+  }
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  legend {
+    float: left;
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    width: 5.2rem;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .filter-chip {
+    position: relative;
+    display: inline-flex;
+  }
+  .filter-chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .filter-chip span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 0.75rem;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    background: var(--card);
+    user-select: none;
+  }
+  .filter-chip input:checked + span {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .filter-chip.all input:checked + span {
+    background: transparent;
+    color: var(--ink-soft);
+    border-color: var(--line);
+  }
+  .filter-chip input:focus-visible + span {
+    outline: 3px solid var(--install);
+    outline-offset: 2px;
+  }
+  .count { margin: 0.25rem 0 0; }
+
+  .move-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .move-row[hidden] { display: none; }
+  .move-link {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.55rem 0.9rem;
+    min-height: var(--tap);
+    text-decoration: none;
+    flex-wrap: wrap;
+  }
+  .move-link:active { transform: scale(0.995); }
+  .prio {
+    font-size: 1.05rem;
+    font-weight: 700;
+    width: 2.2rem;
+    flex-shrink: 0;
+  }
+  .prio.p1 {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    border-radius: 3px;
+  }
+  .prio.p2 { color: var(--ink-soft); }
+  .prio.p3 { color: var(--line-strong); }
+  .move-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    flex: 1;
+    min-width: 10rem;
+  }
+  .move-meta {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .status-backlog { color: var(--ink-soft); }
+  .status-scheduled { color: var(--refine); }
+  .status-installed { color: var(--score-green); }
+  .status-maintenance { color: var(--install); }
+  .status-retired { color: var(--line-strong); text-decoration: line-through; }
+</style>
+
+<script>
+  const form = document.getElementById('filters') as HTMLFormElement;
+  const q = document.getElementById('q') as HTMLInputElement;
+  const rows = [...document.querySelectorAll<HTMLElement>('.move-row')];
+  const count = document.getElementById('count')!;
+  const empty = document.getElementById('empty')!;
+  const KEYS = ['position', 'category', 'tier', 'status', 'pod'] as const;
+
+  function apply(pushUrl: boolean) {
+    const data = new FormData(form);
+    const query = (data.get('q') as string).trim().toLowerCase();
+    const tokens = query.split(/\s+/).filter(Boolean);
+    const active: Record<string, string> = {};
+    for (const key of KEYS) {
+      const value = data.get(key) as string;
+      if (value) active[key] = value;
+    }
+
+    let shown = 0;
+    for (const row of rows) {
+      const matches =
+        (!active.position || row.dataset.position === active.position) &&
+        (!active.category || row.dataset.category === active.category) &&
+        (!active.tier || row.dataset.tier === active.tier) &&
+        (!active.status || row.dataset.status === active.status) &&
+        (!active.pod || (row.dataset.pods ?? '').split(' ').includes(active.pod)) &&
+        (tokens.length === 0 || tokens.every((t) => (row.dataset.search ?? '').includes(t)));
+      row.hidden = !matches;
+      if (matches) shown++;
+    }
+    count.textContent = `${shown} of ${rows.length} moves`;
+    empty.hidden = shown > 0;
+
+    if (pushUrl) {
+      const params = new URLSearchParams(active);
+      if (query) params.set('q', query);
+      const qs = params.toString();
+      history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+    }
+  }
+
+  // hydrate state from the URL so filtered views are shareable
+  const params = new URLSearchParams(location.search);
+  for (const key of KEYS) {
+    const value = params.get(key);
+    if (value) {
+      const input = form.querySelector<HTMLInputElement>(`input[name="${key}"][value="${CSS.escape(value)}"]`);
+      if (input) input.checked = true;
+    }
+  }
+  q.value = params.get('q') ?? '';
+
+  form.addEventListener('input', () => apply(true));
+  form.addEventListener('submit', (e) => e.preventDefault());
+  apply(false);
+</script>
