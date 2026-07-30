@@ -1,6 +1,6 @@
 ---
 id: scramble-sprawl-spin
-name: "Sprawl and spin behind"
+name: "Reattack (spin behind)"
 position: scramble
 category: counter
 tier: secondary

@@ -31,6 +31,12 @@ tags: [defense]
 - Whizzer hip-pressure holds, 3 × :20 per side.
 - Shot → caught → whizzer exit series, 10 reps.
 
+## Finishes off the whizzer
+
+Five answers, drilled in this order: circle to bury, far ankle, hip block,
+tight waist, knock-down. A whizzer without one of these queued up is just
+holding on.
+
 ## Situational entries
 
 - Any time our leg is caught; the bridge from defense back to offense.

@@ -10,7 +10,11 @@ pods: [blue, gold, white]
 prerequisites: [neutral-stance-motion]
 chains_to: [neutral-single-leg, neutral-snap-and-go]
 countered_by: []
-sources: []
+sources:
+  - label: Getting inside control
+    provider: youtube
+    url: https://www.youtube.com/watch?v=0hbCr12yMtg
+    notes: Kyle Snyder (RUDIS) — winning inside position; pairs with the tie taxonomy.
 tags: [attack-system]
 ---
 

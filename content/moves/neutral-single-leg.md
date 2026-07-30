@@ -1,6 +1,6 @@
 ---
 id: neutral-single-leg
-name: "High-c single leg"
+name: "Head outside single"
 position: neutral
 category: entry
 tier: core
@@ -8,7 +8,7 @@ status: backlog
 priority: 1
 pods: [blue, gold, white]
 prerequisites: [neutral-hand-fight]
-chains_to: [neutral-run-the-pipe, neutral-high-crotch]
+chains_to: [neutral-run-the-pipe, neutral-double-leg, neutral-high-crotch]
 countered_by: [scramble-whizzer, neutral-sprawl-front-headlock]
 sources: []
 tags: [attack-system]
@@ -33,3 +33,5 @@ tags: [attack-system]
 ## Situational entries
 
 - Primary attack off any inside-control win; the call when we need a takedown late.
+- Three finishes, in order: [[neutral-run-the-pipe|run the pipe]], double off
+  to [[neutral-double-leg]], rotate to the back corner.

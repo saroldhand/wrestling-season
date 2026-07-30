@@ -10,7 +10,11 @@ pods: [blue, gold]
 prerequisites: [neutral-hand-fight]
 chains_to: [neutral-sprawl-front-headlock]
 countered_by: []
-sources: []
+sources:
+  - label: Snap, front headlock, move 'em
+    provider: youtube
+    url: https://www.youtube.com/watch?v=i-AMsFmy-wE
+    notes: Jeff Jordan camp — snapping into the front headlock and moving them off it.
 tags: [attack-system, short-offense]
 ---
 
