@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const moves = await getCollection('moves');
+const practices = await getCollection('practices');
+---
+
+<Layout title="Dashboard">
+  <h1>Wrestling HQ</h1>
+  <p class="muted">
+    Scaffold is live: {moves.length} move(s), {practices.length} practice(s) in the vault.
+    Dashboard lands in Phase 4.
+  </p>
+</Layout>

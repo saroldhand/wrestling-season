@@ -1,0 +1,67 @@
+---
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow-condensed/500.css';
+import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/barlow-condensed/700.css';
+import '../styles/global.css';
+import { SEASON } from '../lib/season.ts';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Season planning for the wrestling room.' } = Astro.props;
+
+const nav = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/calendar', label: 'Calendar' },
+  { href: '/moves', label: 'Moves' },
+  { href: '/system', label: 'System' },
+];
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) =>
+  href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#16191d" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <title>{title} · Wrestling HQ</title>
+  </head>
+  <body>
+    <header class="site-header no-print">
+      <div class="bar">
+        <a class="wordmark" href="/">
+          Wrestling HQ <span class="season">{SEASON}</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          {nav.map((item) => (
+            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer no-print">
+      Wrestling HQ · folkstyle {SEASON} · plans are written in the room, not here
+    </footer>
+    <script>
+      if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "wrestling-hq",
+  "version": "0.1.0",
+  "description": "Season-planning system for a high school folkstyle wrestling program: Obsidian vault + Astro static site.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "validate": "node scripts/validate.mjs",
+    "validate:strict": "node scripts/validate.mjs --strict",
+    "seed": "node scripts/seed-calendar.mjs",
+    "new:move": "node scripts/new-move.mjs",
+    "new:practice": "node scripts/new-practice.mjs"
+  },
+  "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "astro": "^5.18.2",
+    "typescript": "^5.9.3",
+    "unist-util-visit": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "js-yaml": "^5.2.2"
+  }
+}
