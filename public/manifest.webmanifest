@@ -1,0 +1,16 @@
+{
+  "name": "Wrestling HQ",
+  "short_name": "Mat HQ",
+  "description": "Season planning for the wrestling room — calendar, practices, and the move library.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f2ee",
+  "theme_color": "#16191d",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
