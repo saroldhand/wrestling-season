@@ -1,16 +1,27 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { POSITIONS } from '../lib/schemas.ts';
 import { withBase } from '../lib/url.ts';
 
 const moves = await getCollection('moves');
 const p1 = moves.filter((m) => m.data.priority === 1);
 
-const groups = POSITIONS.map((position) => ({
-  position,
+// a `board` override pulls a move out of its position column and into a
+// named section — the board groups by system, not strictly by position
+const COLUMNS: { key: string; label: string }[] = [
+  { key: 'neutral', label: 'neutral' },
+  { key: 'baseline-defense', label: 'Base Line Defense' },
+  { key: 'top', label: 'top' },
+  { key: 'bottom', label: 'bottom' },
+  { key: 'scramble', label: 'scramble' },
+  { key: 'edge', label: 'edge' },
+];
+const groupOf = (m: (typeof moves)[number]) => m.data.board ?? m.data.position;
+
+const groups = COLUMNS.map(({ key, label }) => ({
+  position: label,
   items: p1
-    .filter((m) => m.data.position === position)
+    .filter((m) => groupOf(m) === key)
     .sort((a, b) => a.data.name.localeCompare(b.data.name)),
 })).filter((g) => g.items.length > 0);
 

@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import PracticeCard from '../components/PracticeCard.astro';
 import { getCollection } from 'astro:content';
-import { MOVE_STATUSES, POSITIONS } from '../lib/schemas.ts';
+import { MOVE_STATUSES } from '../lib/schemas.ts';
 import { SEASON_START, weekOf } from '../lib/season.ts';
 import { withBase } from '../lib/url.ts';
 
@@ -34,11 +34,20 @@ const rollup = MOVE_STATUSES.map((status) => ({
   count: moves.filter((m) => m.data.status === status).length,
 }));
 
-// system summary — date-independent
+// system summary — date-independent; mirrors the /system board columns,
+// where a `board` override outranks the move's position
 const p1 = moves.filter((m) => m.data.priority === 1);
-const p1ByPosition = POSITIONS.map((position) => ({
-  position,
-  count: p1.filter((m) => m.data.position === position).length,
+const BOARD_COLUMNS = [
+  { key: 'neutral', label: 'neutral' },
+  { key: 'baseline-defense', label: 'Base Line Defense' },
+  { key: 'top', label: 'top' },
+  { key: 'bottom', label: 'bottom' },
+  { key: 'scramble', label: 'scramble' },
+  { key: 'edge', label: 'edge' },
+];
+const p1ByPosition = BOARD_COLUMNS.map(({ key, label }) => ({
+  position: label,
+  count: p1.filter((m) => (m.data.board ?? m.data.position) === key).length,
 })).filter((x) => x.count > 0);
 const overloaded = p1ByPosition.filter((x) => x.count > 5);
 ---

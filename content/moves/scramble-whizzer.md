@@ -6,6 +6,7 @@ category: counter
 tier: core
 status: backlog
 priority: 1
+board: baseline-defense
 pods: [blue, gold, white]
 prerequisites: []
 chains_to: [scramble-sprawl-spin]

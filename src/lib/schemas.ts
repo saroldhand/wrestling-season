@@ -34,6 +34,14 @@ export const BLOCK_IDS = ['evaluate', 'install', 'volume', 'refine', 'peak'] as 
 export const PRACTICE_STATUSES = ['planned', 'delivered'] as const;
 export const CONCEPT_TYPES = ['rule', 'principle', 'drill', 'protocol'] as const;
 
+/**
+ * Named system-board sections that cut across positions. A move with `board`
+ * set appears in that /system column instead of its position column. New
+ * sections are a schema change on purpose — the board is the system, and
+ * the system grows deliberately.
+ */
+export const BOARD_GROUPS = ['baseline-defense'] as const;
+
 /** Filename-is-the-id: kebab-case, no leading/trailing/double hyphens. */
 export const idString = z
   .string()
@@ -71,6 +79,7 @@ export const moveSchema = z
     tier: z.enum(TIERS),
     status: z.enum(MOVE_STATUSES),
     priority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    board: z.enum(BOARD_GROUPS).optional(),
     pods: z.array(z.enum(PODS)).default([]),
     prerequisites: z.array(idString).default([]),
     chains_to: z.array(idString).default([]),

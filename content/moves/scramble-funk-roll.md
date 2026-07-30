@@ -5,7 +5,7 @@ position: scramble
 category: counter
 tier: situational
 status: backlog
-priority: 3
+priority: 1
 pods: [gold]
 prerequisites: [scramble-whizzer]
 chains_to: []
