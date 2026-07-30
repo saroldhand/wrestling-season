@@ -40,11 +40,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run validate
-      # project sites serve under /<repo>/ — every internal URL goes through
-      # BASE_PATH (see astro.config.mjs and src/lib/url.ts)
+      # A custom domain (CNAME file in the repo root) serves from the domain
+      # root; the default github.io project site serves under /<repo>/.
+      # Every internal URL goes through BASE_PATH (astro.config.mjs +
+      # src/lib/url.ts), so one variable switches between the two.
+      - name: Resolve base path
+        id: base
+        run: |
+          if [ -f CNAME ]; then
+            echo "base=" >> "$GITHUB_OUTPUT"
+            echo "Custom domain $(cat CNAME) — building for the domain root"
+          else
+            echo "base=/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
+            echo "No CNAME — building for /${{ github.event.repository.name }}/"
+          fi
       - run: npm run build
         env:
-          BASE_PATH: /${{ github.event.repository.name }}
+          BASE_PATH: ${{ steps.base.outputs.base }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
