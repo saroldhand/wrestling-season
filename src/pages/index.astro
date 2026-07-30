@@ -70,7 +70,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
 
     <div class="dash-side">
       <section class="card" id="week-card">
-        <h2>This week</h2>
+        <h2><a class="week-link" href={withBase('/week/')}>This week →</a></h2>
         <ol class="week-strip" id="week-strip" data-season-start={SEASON_START}></ol>
         <p class="muted" id="week-note">Season starts {SEASON_START}.</p>
       </section>
@@ -140,6 +140,8 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
     gap: 1rem;
   }
   .dash h2 { font-size: 1.25rem; }
+  .week-link { text-decoration: none; }
+  .week-link:hover, .week-link:focus-visible { text-decoration: underline; }
 
   .week-strip {
     list-style: none;

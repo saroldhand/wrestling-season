@@ -1,0 +1,227 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PracticeCard from '../../components/PracticeCard.astro';
+import { getCollection } from 'astro:content';
+import { weekBounds, blockFor, formatDay, addDays, weekdayOf } from '../../lib/season.ts';
+import { withBase } from '../../lib/url.ts';
+
+export async function getStaticPaths() {
+  const practices = await getCollection('practices');
+  const weeks = [...new Set(practices.map((p) => p.data.week))].sort((a, b) => a - b);
+  return weeks.map((week) => ({ params: { week: String(week) }, props: { week, weeks } }));
+}
+
+const { week, weeks } = Astro.props;
+const bounds = weekBounds(week);
+const block = blockFor(bounds.start);
+
+const practices = await getCollection('practices');
+const moves = await getCollection('moves');
+const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+const byDate = new Map(practices.map((p) => [p.data.date, p.data]));
+
+// every calendar day in the week, practice file or not
+const days: { iso: string; practice: (typeof practices)[number]['data'] | null }[] = [];
+for (let iso = bounds.start; iso <= bounds.end; iso = addDays(iso, 1)) {
+  days.push({ iso, practice: byDate.get(iso) ?? null });
+}
+
+// the Sunday-night read: everything on the whiteboard this week
+const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const abbr = (iso: string) => DAY_ABBR[weekdayOf(iso)];
+
+const teaching = new Map<string, string[]>(); // move id -> day abbrs (primary)
+const spiraling = new Map<string, string[]>();
+const film = new Map<string, string[]>();
+for (const { iso, practice } of days) {
+  if (!practice) continue;
+  for (const id of practice.primary) teaching.set(id, [...(teaching.get(id) ?? []), abbr(iso)]);
+  for (const id of practice.spiral) spiraling.set(id, [...(spiraling.get(id) ?? []), abbr(iso)]);
+  if (practice.film) film.set(practice.film, [...(film.get(practice.film) ?? []), abbr(iso)]);
+}
+const rows = [
+  { label: 'Installing', map: teaching, cls: '' },
+  { label: 'Spiral', map: spiraling, cls: 'spiral' },
+  { label: 'Film', map: film, cls: 'film' },
+].filter((r) => r.map.size > 0);
+
+const practiceCount = days.filter((d) => d.practice && d.practice.day_type !== 'off').length;
+const writtenCount = days.filter(
+  (d) => d.practice && (d.practice.schedule.length > 0 || d.practice.primary.length > 0)
+).length;
+
+const i = weeks.indexOf(week);
+const prev = i > 0 ? weeks[i - 1] : null;
+const next = i < weeks.length - 1 ? weeks[i + 1] : null;
+
+const range = `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} – ${formatDay(bounds.end, { month: 'short', day: 'numeric' })}`;
+---
+
+<Layout title={`Week ${week}`} description={`Practice week ${week}: ${range}`}>
+  <nav class="week-nav no-print" aria-label="Week navigation">
+    {prev !== null ? <a class="btn" href={withBase(`/week/${prev}/`)}>← Wk {prev}</a> : <span></span>}
+    <a class="btn" href={withBase('/week/#all')}>All weeks</a>
+    <a class="btn" href={withBase(`/calendar#${bounds.start}`)}>Calendar</a>
+    {next !== null ? <a class="btn" href={withBase(`/week/${next}/`)}>Wk {next} →</a> : <span></span>}
+  </nav>
+
+  <header class="week-header">
+    <h1>Week {week} <span class="range muted">{range}</span></h1>
+    <p class="week-badges">
+      {block && <span class={`badge solid block-${block}`}>{block}</span>}
+      <span class="badge">{practiceCount} practices</span>
+      <span class={`badge ${writtenCount < practiceCount ? 'thin' : 'ok'}`}>
+        {writtenCount} of {practiceCount} written
+      </span>
+    </p>
+  </header>
+
+  <section class="card teach-board">
+    <h2>On the whiteboard this week</h2>
+    {rows.length === 0 ? (
+      <p class="muted">
+        Nothing written yet — these days are still stubs. Open a day below and put moves on its
+        <code>primary</code> list; this board fills itself in.
+      </p>
+    ) : (
+      <dl class="teach-rows">
+        {rows.map((r) => (
+          <>
+            <dt>{r.label}</dt>
+            <dd>
+              {[...r.map.entries()].map(([id, dayList]) => (
+                <a class={`chip ${r.cls}`} href={withBase(`/moves/${id}/`)}>
+                  {moveNames.get(id) ?? id}
+                  <span class="chip-days">{dayList.join(' ')}</span>
+                </a>
+              ))}
+            </dd>
+          </>
+        ))}
+      </dl>
+    )}
+  </section>
+
+  <div class="week-days">
+    {days.map(({ iso, practice }) =>
+      practice ? (
+        <PracticeCard practice={practice} moveNames={moveNames} compact />
+      ) : (
+        <div class="rest-day card" data-date={iso}>
+          <span class="display rest-date">{formatDay(iso, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+          <span class="muted">rest</span>
+        </div>
+      )
+    )}
+  </div>
+</Layout>
+
+<style>
+  .week-nav {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .week-header h1 { margin-bottom: 0.4rem; }
+  .range {
+    font-size: 0.6em;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .week-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin: 0 0 1rem;
+  }
+  .badge.thin { color: var(--refine); }
+  .badge.ok { color: var(--score-green); }
+
+  .teach-board { margin-bottom: 1.25rem; }
+  .teach-board h2 { font-size: 1.25rem; }
+  .teach-rows {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 0.9rem;
+    align-items: baseline;
+  }
+  .teach-rows dt {
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .teach-rows dd {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    min-height: 40px;
+    padding: 0 0.8rem;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.98rem;
+    background: var(--card);
+  }
+  .chip.spiral { border-style: dashed; color: var(--ink-soft); }
+  .chip.film { border-color: var(--install); color: var(--install); }
+  .chip-days {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+
+  .week-days {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+  .rest-day {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: var(--tap);
+    background: #e7e9e4;
+  }
+  .rest-date {
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+  }
+
+  @media print {
+    .week-days { grid-template-columns: 1fr 1fr; gap: 8pt; }
+    .teach-board { border: none; padding: 0 0 8pt; }
+    .chip { min-height: 0; border: none; padding: 0; }
+    .chip::after { content: ' ·'; }
+  }
+</style>
+
+<script>
+  // runtime flags — the build can be days old
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  document.querySelectorAll<HTMLElement>('.practice-card[data-date], .rest-day[data-date]').forEach((card) => {
+    const date = card.dataset.date!;
+    if (date === today) card.style.outline = '3px solid var(--ink)';
+    if (card.dataset.status === 'planned' && date < today) {
+      card.querySelector('[data-planned-badge]')?.classList.add('overdue');
+    }
+  });
+</script>

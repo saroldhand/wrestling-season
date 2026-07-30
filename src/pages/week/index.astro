@@ -1,0 +1,108 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { weekBounds, blockFor, formatDay, SEASON_START } from '../../lib/season.ts';
+import { withBase } from '../../lib/url.ts';
+
+const practices = await getCollection('practices');
+const weekNums = [...new Set(practices.map((p) => p.data.week))].sort((a, b) => a - b);
+
+const weeks = weekNums.map((week) => {
+  const bounds = weekBounds(week);
+  const inWeek = practices.filter((p) => p.data.week === week);
+  const count = inWeek.filter((p) => p.data.day_type !== 'off').length;
+  const written = inWeek.filter((p) => p.data.schedule.length > 0 || p.data.primary.length > 0).length;
+  return {
+    week,
+    ...bounds,
+    block: blockFor(bounds.start),
+    count,
+    written,
+    range: `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} – ${formatDay(bounds.end, { month: 'short', day: 'numeric' })}`,
+  };
+});
+---
+
+<Layout title="Weeks" description="The season, week by week.">
+  <h1>Season By Week</h1>
+  <p class="muted">
+    Opening <a href={withBase('/week/')}>Week</a> from the nav jumps straight to the current
+    week; this list is the whole season. Season starts {SEASON_START}.
+  </p>
+
+  <ol class="week-list" id="week-list">
+    {weeks.map((w) => (
+      <li>
+        <a class={`week-row band-${w.block}`} href={withBase(`/week/${w.week}/`)} data-start={w.start} data-end={w.end}>
+          <span class="wk display">Wk {w.week}</span>
+          <span class="week-range display">{w.range}</span>
+          <span class="week-meta">
+            <span class={`badge solid block-${w.block}`}>{w.block}</span>
+            <span class="badge">{w.written}/{w.count} written</span>
+          </span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</Layout>
+
+<style>
+  .week-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 640px;
+  }
+  .week-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left-width: 6px;
+    border-radius: var(--radius);
+    padding: 0.55rem 0.9rem;
+    min-height: var(--tap);
+    text-decoration: none;
+    flex-wrap: wrap;
+  }
+  .band-evaluate { border-left-color: var(--evaluate); }
+  .band-install { border-left-color: var(--install); }
+  .band-volume { border-left-color: var(--volume); }
+  .band-refine { border-left-color: var(--refine); }
+  .band-peak { border-left-color: var(--peak); }
+  .week-row.is-current { outline: 3px solid var(--ink); }
+  .wk {
+    font-size: 1.2rem;
+    font-weight: 700;
+    width: 3.4rem;
+  }
+  .week-range {
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex: 1;
+    min-width: 9rem;
+  }
+  .week-meta {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+</style>
+
+<script>
+  // /week/ is the "take me to this week" tap — unless #all asked for the list
+  const rows = [...document.querySelectorAll<HTMLAnchorElement>('.week-row')];
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  let current =
+    rows.find((r) => r.dataset.start! <= today && today <= r.dataset.end!) ??
+    (today < rows[0]?.dataset.start! ? rows[0] : rows[rows.length - 1]);
+  if (current) {
+    current.classList.add('is-current');
+    if (location.hash !== '#all') location.replace(current.href);
+  }
+</script>

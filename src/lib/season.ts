@@ -90,6 +90,17 @@ export function weekOf(iso: string): number {
   return Math.floor(diff / (7 * DAY_MS)) + 1;
 }
 
+/** Calendar bounds of a season week: week 0 is the eval weekend, weeks 1+ run Mon–Sun. */
+export function weekBounds(week: number): { start: string; end: string } {
+  if (week <= 0) return { start: SEASON_START, end: addDays(WEEK_ONE_MONDAY, -1) };
+  const start = addDays(WEEK_ONE_MONDAY, (week - 1) * 7);
+  const end = addDays(start, 6);
+  return {
+    start: start < SEASON_START ? SEASON_START : start,
+    end: end > SEASON_END ? SEASON_END : end,
+  };
+}
+
 /** Every ISO date from SEASON_START through SEASON_END inclusive. */
 export function seasonDays(): string[] {
   const days: string[] = [];
