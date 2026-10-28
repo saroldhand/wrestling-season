@@ -68,6 +68,12 @@ const isCurrent = (href: string) =>
       if ('serviceWorker' in navigator && !import.meta.env.DEV) {
         navigator.serviceWorker.register(withBase('/sw.js')).catch(() => {});
       }
+      // on a phone the nav scrolls sideways; keep the current page in view
+      const current = document.querySelector<HTMLElement>('.site-nav [aria-current="page"]');
+      if (current?.parentElement) {
+        const nav = current.parentElement;
+        nav.scrollLeft = current.offsetLeft - (nav.clientWidth - current.clientWidth) / 2;
+      }
     </script>
   </body>
 </html>

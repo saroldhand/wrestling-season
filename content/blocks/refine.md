@@ -41,7 +41,7 @@ template:
     - { kind: close, min: 5, note: "Weight check" }
 ---
 
-Conference and seeding season. Practices get shorter and sharper: fewer
+Conference and seeding season. Practices stay two hours but get sharper: fewer
 moves, more situations, more wrestling from the exact positions the film
 says we lose. What isn't trusted by the end of this block doesn't travel to
 [[peak]].

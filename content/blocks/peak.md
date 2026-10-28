@@ -7,7 +7,7 @@ objective: Arrive at districts, regions, and state fresh, sharp, and confident â
 kpis:
   - Practice load tapered week over week; zero conditioning-only sessions
   - Every postseason entrant drills their own match plan daily
-  - Injury and weight status green-boarded before each Friday
+  - Injury and weight status green-boarded before each meet
 template:
   install:
     - { kind: warm-up, min: 20 }

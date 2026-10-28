@@ -8,7 +8,7 @@
 import type { Practice, SegmentKind } from '../lib/schemas.ts';
 import { formatDay, MILESTONES } from '../lib/season.ts';
 import { withBase } from '../lib/url.ts';
-import { practiceTimeline, IDEA_TYPE } from '../lib/practice-plan.ts';
+import { practiceTimeline, IDEA_TYPE, isPracticeDay } from '../lib/practice-plan.ts';
 import type { PlanContext } from '../lib/plan-context.ts';
 
 interface Props {
@@ -49,7 +49,7 @@ const ideasFor = (kind?: SegmentKind) => {
         showDate && <span class="pc-date display">{formatDay(p.date)}</span>
       )}
       <span class={`badge solid block-${p.block}`}>{p.block}</span>
-      <span class="badge">{p.day_type}</span>
+      <span class="badge">{isPracticeDay(p.day_type) ? `${p.day_type} day` : p.day_type}</span>
       <span class="badge">wk {p.week}</span>
       {p.status === 'delivered' ? (
         <span class="badge delivered">✓ delivered</span>
@@ -57,10 +57,10 @@ const ideasFor = (kind?: SegmentKind) => {
         <span class="badge planned" data-planned-badge>planned</span>
       )}
     </div>
-    {!off && <span class="pc-duration display">{p.duration_min}′</span>}
+    {isPracticeDay(p.day_type) && <span class="pc-duration display">{p.duration_min}′</span>}
   </header>
 
-  {MILESTONES[p.date] && <p class="flag pc-milestone">{MILESTONES[p.date]}</p>}
+  {MILESTONES[p.date] && <p class="pc-milestone">{MILESTONES[p.date]}</p>}
 
   {off ? (
     <p class="muted">No practice — off day.</p>
@@ -230,6 +230,11 @@ const ideasFor = (kind?: SegmentKind) => {
   }
   .pc-milestone {
     margin: 0;
+    padding: 0.45rem 0.8rem;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    font-weight: 600;
   }
   .pc-ideas {
     margin-top: 0.3rem;
@@ -242,7 +247,7 @@ const ideasFor = (kind?: SegmentKind) => {
     letter-spacing: 0.05em;
     font-size: 0.85rem;
     color: var(--install);
-    min-height: 32px;
+    min-height: 40px;
     display: flex;
     align-items: center;
   }

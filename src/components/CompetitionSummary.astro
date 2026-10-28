@@ -15,7 +15,7 @@ interface Props {
 }
 
 const { id, competition: c } = Astro.props;
-const span = c.end_date ? when(c) : null;
+const w = when(c);
 ---
 
 <article class="comp-summary card">
@@ -25,8 +25,8 @@ const span = c.end_date ? when(c) : null;
     {c.teams.map((team) => <span class={`badge cs-${team}`}>{TEAM_LABEL[team]}</span>)}
   </header>
   <p class="cs-where muted">
-    {c.location ?? (!c.home && 'Location TBA')}
-    {span && <span>{c.location || !c.home ? ' · ' : ''}{span.dow} {span.day}</span>}
+    {w.dow} {w.day}
+    {c.location ? ` · ${c.location}` : !c.home && ' · Location TBA'}
   </p>
   <dl class="cs-times">
     {timeRows(c).map((row) => (

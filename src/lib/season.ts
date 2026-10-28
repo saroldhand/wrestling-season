@@ -12,7 +12,7 @@ export const SEASON = '2026-27';
 export const SEASON_START = '2026-11-13'; // Friday — first day of tryouts
 export const SEASON_END = '2027-03-14'; // Sunday — end of state weekend
 
-/** Week numbering anchor: 2026-11-16 (Monday) is week 1. Nov 13–15 is week 0. */
+/** Week numbering anchor: 2026-11-16 (Monday) is week 1. Nov 13–15 (evaluation) is week 0. */
 export const WEEK_ONE_MONDAY = '2026-11-16';
 
 export type BlockId = 'evaluate' | 'install' | 'volume' | 'refine' | 'peak';
@@ -101,14 +101,14 @@ export function blockFor(iso: string): BlockId | null {
   return bounds ? bounds.id : null;
 }
 
-/** Season week number: week 1 starts WEEK_ONE_MONDAY; the eval weekend is week 0. */
+/** Season week number: week 1 starts WEEK_ONE_MONDAY; Nov 13–15 is week 0. */
 export function weekOf(iso: string): number {
   const diff = toDate(iso).getTime() - toDate(WEEK_ONE_MONDAY).getTime();
   if (diff < 0) return 0;
   return Math.floor(diff / (7 * DAY_MS)) + 1;
 }
 
-/** Calendar bounds of a season week: week 0 is the eval weekend, weeks 1+ run Mon–Sun. */
+/** Calendar bounds of a season week: week 0 is Nov 13–15, weeks 1+ run Mon–Sun. */
 export function weekBounds(week: number): { start: string; end: string } {
   if (week <= 0) return { start: SEASON_START, end: addDays(WEEK_ONE_MONDAY, -1) };
   const start = addDays(WEEK_ONE_MONDAY, (week - 1) * 7);

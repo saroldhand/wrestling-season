@@ -147,6 +147,28 @@ a:focus-visible {
   color: var(--ink);
 }
 
+/* phones: wordmark on top, nav as one swipeable row instead of three
+   wrapped ones — more of the practice card above the fold */
+@media (max-width: 700px) {
+  .site-header .bar {
+    gap: 0.1rem;
+    padding-bottom: 0.4rem;
+  }
+  .site-nav {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .site-nav::-webkit-scrollbar { display: none; }
+  .site-nav a {
+    flex-shrink: 0;
+    padding: 0 0.75rem;
+  }
+}
+
 .site-footer {
   border-top: 1px solid var(--line);
   color: var(--ink-soft);

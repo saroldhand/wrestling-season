@@ -26,6 +26,9 @@ export const IDEA_TYPE: Partial<Record<SegmentKind, 'drill' | 'situation' | 'liv
   conditioning: 'conditioning',
 };
 
+/** Days the room actually practices — not meets, not off days. */
+export const isPracticeDay = (dayType: Practice['day_type']) => dayType !== 'off' && dayType !== 'competition';
+
 export interface TimedSegment {
   clock: string;
   len: number;

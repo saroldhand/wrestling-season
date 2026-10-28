@@ -139,7 +139,7 @@ const drawerDates = [...new Set([...byDate.keys(), ...eventsByDate.keys()])].sor
               id={cell.blockStartsHere ? `block-${cell.block}` : undefined}
             >
               <span class="num display">{cell.num}</span>
-              {cell.inSeason && cell.sunday && <span class="tag muted">—</span>}
+              {cell.inSeason && <span class="tag muted">—</span>}
             </div>
           )
         )}
