@@ -11,7 +11,7 @@
  * instead of silently vanishing from the rendered site.
  */
 import { z } from 'astro/zod';
-import { SEASON_START, SEASON_END, isInSeason } from './season.ts';
+import { SEASON_START, SEASON_END, isInSeason, dateRange } from './season.ts';
 
 export const POSITIONS = ['neutral', 'top', 'bottom', 'scramble', 'edge'] as const;
 export const CATEGORIES = [
@@ -33,6 +33,7 @@ export const DAY_TYPES = ['install', 'volume', 'sharpen', 'competition', 'off'] 
 export const BLOCK_IDS = ['evaluate', 'install', 'volume', 'refine', 'peak'] as const;
 export const PRACTICE_STATUSES = ['planned', 'delivered'] as const;
 export const CONCEPT_TYPES = ['rule', 'principle', 'drill', 'protocol'] as const;
+export const TEAMS = ['varsity', 'jv'] as const;
 
 /**
  * Named system-board sections that cut across positions. A move with `board`
@@ -147,7 +148,70 @@ export const conceptSchema = z
   })
   .strict();
 
+/** Clock times as the schedule prints them. */
+const clockTime = z
+  .string()
+  .regex(/^(1[0-2]|[1-9]):[0-5]\d(am|pm)$/, 'times look like "9:30am" or "5:30pm"');
+
+/** One value for the whole event, or a list with one value per day of a multi-day event. */
+const perDay = <T extends z.ZodTypeAny>(value: T) => z.union([value, z.array(value).min(2)]);
+
+const seasonDate = flexibleDate.refine(isInSeason, {
+  message: `competition dates must fall inside the season (${SEASON_START} → ${SEASON_END})`,
+});
+
+/**
+ * One file per competition in content/competitions/, named `<date>-<slug>`.
+ * A time left out renders as TBA. Events both teams attend are one file
+ * with `teams: [varsity, jv]`; a start that differs by team is a map.
+ */
+export const competitionSchema = z
+  .object({
+    name: z.string().min(1),
+    date: seasonDate,
+    end_date: seasonDate.optional(), // multi-day events only
+    teams: z.array(z.enum(TEAMS)).min(1),
+    location: z.string().min(1).optional(),
+    home: z.boolean().default(false),
+    start: z.union([perDay(clockTime), z.record(z.enum(TEAMS), clockTime)]).optional(),
+    weigh_in: perDay(z.union([clockTime, z.enum(['none', 'home'])])).optional(), // home = weigh in at Turpin before the bus
+    bus: perDay(z.union([clockTime, z.literal('none')])).optional(),
+  })
+  .strict()
+  .superRefine((c, ctx) => {
+    if (c.end_date && c.end_date <= c.date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['end_date'],
+        message: 'end_date must be after date (leave it out for a one-day event)',
+      });
+    }
+    const days = dateRange(c.date, c.end_date ?? c.date).length;
+    for (const key of ['start', 'weigh_in', 'bus'] as const) {
+      const value = c[key];
+      if (Array.isArray(value) && value.length !== days) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: `${key} lists ${value.length} values for a ${days}-day event — give one per day, or a single value for every day`,
+        });
+      }
+    }
+    if (c.start && typeof c.start === 'object' && !Array.isArray(c.start)) {
+      for (const team of Object.keys(c.start) as (typeof TEAMS)[number][]) {
+        if (!c.teams.includes(team)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['start', team],
+            message: `${team} has a start time but isn't in this competition's teams`,
+          });
+        }
+      }
+    }
+  });
+
 export type Move = z.infer<typeof moveSchema>;
 export type Practice = z.infer<typeof practiceSchema>;
 export type Block = z.infer<typeof blockSchema>;
 export type Concept = z.infer<typeof conceptSchema>;
+export type Competition = z.infer<typeof competitionSchema>;

@@ -1,6 +1,6 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
-import { moveSchema, practiceSchema, blockSchema, conceptSchema } from './lib/schemas.ts';
+import { moveSchema, practiceSchema, blockSchema, conceptSchema, competitionSchema } from './lib/schemas.ts';
 
 // The vault root is `content/` at the repo root (it doubles as the Obsidian
 // vault). `content/private/` and `content/_templates/` are deliberately not
@@ -22,5 +22,9 @@ export const collections = {
   concepts: defineCollection({
     loader: glob({ pattern: '*.md', base: './content/concepts' }),
     schema: conceptSchema,
+  }),
+  competitions: defineCollection({
+    loader: glob({ pattern: '*.md', base: './content/competitions' }),
+    schema: competitionSchema,
   }),
 };
