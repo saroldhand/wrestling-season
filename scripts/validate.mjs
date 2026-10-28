@@ -6,10 +6,11 @@
  *   - frontmatter that fails the shared Zod schemas (same ones the build uses)
  *   - filename ≠ frontmatter id (moves, blocks, concepts)
  *   - practice filename ≠ its date field
+ *   - competition filename not `<date>-<kebab-name>`
  *   - any referenced move id (primary, spiral, film, prerequisites,
  *     chains_to, countered_by) that doesn't resolve to a real move file
  *   - practice dates outside the season
- *   - duplicate ids across the wikilink namespace (moves/concepts/blocks/practices)
+ *   - duplicate ids across the wikilink namespace (moves/concepts/blocks/practices/competitions)
  *   - anything at all inside content/private/ that is tracked by git
  *
  * Warnings (exit 0, or exit 1 with --strict):
@@ -18,14 +19,16 @@
  *     practice references them
  *   - practice block/week fields that disagree with src/lib/season.ts
  *   - schedule blocks that overflow duration_min
+ *   - competition days where bus → weigh-in → start isn't in time order
+ *   - a practice on a competition date whose day_type isn't competition
  *   - broken [[wikilinks]] in markdown bodies
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { load as loadYaml } from 'js-yaml';
-import { moveSchema, practiceSchema, blockSchema, conceptSchema } from '../src/lib/schemas.ts';
-import { isInSeason, blockFor, weekOf, SEASON_START, SEASON_END } from '../src/lib/season.ts';
+import { moveSchema, practiceSchema, blockSchema, conceptSchema, competitionSchema, idString } from '../src/lib/schemas.ts';
+import { isInSeason, blockFor, weekOf, dateRange, SEASON_START, SEASON_END } from '../src/lib/season.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const CONTENT = path.join(ROOT, 'content');
@@ -77,6 +80,7 @@ const collections = {
   practices: { files: listMd('practices'), schema: practiceSchema },
   blocks: { files: listMd('blocks'), schema: blockSchema },
   concepts: { files: listMd('concepts'), schema: conceptSchema },
+  competitions: { files: listMd('competitions'), schema: competitionSchema },
 };
 
 const parsed = {}; // name -> [{file, data, body}]
@@ -101,6 +105,11 @@ for (const name of ['moves', 'blocks', 'concepts']) {
 for (const { file, data } of parsed.practices) {
   if (data.date !== file.slug) {
     err(file.rel, `practice filename must be its ISO date: date "${data.date}" ≠ filename "${file.slug}"`);
+  }
+}
+for (const { file, data } of parsed.competitions) {
+  if (!file.slug.startsWith(`${data.date}-`) || !idString.safeParse(file.slug).success) {
+    err(file.rel, `competition filename must be its date then a kebab-case name, e.g. "${data.date}-xenia-tournament"`);
   }
 }
 
@@ -156,6 +165,44 @@ for (const { file, data } of parsed.practices) {
   if (scheduled > data.duration_min) {
     warn(file.rel, `schedule blocks total ${scheduled} min but duration_min is ${data.duration_min}`);
   }
+}
+
+// ---- competition days ------------------------------------------------
+const clockMinutes = (t) => {
+  const [, h, m, ampm] = /^(\d+):(\d{2})(am|pm)$/.exec(t);
+  return (Number(h) % 12 + (ampm === 'pm' ? 12 : 0)) * 60 + Number(m);
+};
+const isClock = (v) => typeof v === 'string' && /^\d/.test(v);
+const practiceByDate = new Map(parsed.practices.map((p) => [p.data.date, p]));
+
+for (const { file, data } of parsed.competitions) {
+  const days = dateRange(data.date, data.end_date ?? data.date);
+  const onDay = (value, i) => (Array.isArray(value) ? value[i] : value);
+  days.forEach((iso, i) => {
+    // a per-team start map: the first team on the mat sets the clock
+    const start =
+      data.start && typeof data.start === 'object' && !Array.isArray(data.start)
+        ? Object.values(data.start).sort((a, b) => clockMinutes(a) - clockMinutes(b))[0]
+        : onDay(data.start, i);
+    const steps = [
+      ['bus', onDay(data.bus, i)],
+      ['weigh-in', onDay(data.weigh_in, i)],
+      ['start', start],
+    ].filter(([, t]) => isClock(t));
+    const when = days.length > 1 ? `${iso}: ` : '';
+    for (let k = 1; k < steps.length; k++) {
+      const [prevLabel, prevTime] = steps[k - 1];
+      const [label, time] = steps[k];
+      if (clockMinutes(prevTime) >= clockMinutes(time)) {
+        warn(file.rel, `${when}${prevLabel} ${prevTime} should come before ${label} ${time} — check for an am/pm typo`);
+      }
+    }
+
+    const practice = practiceByDate.get(iso);
+    if (practice && practice.data.day_type !== 'competition') {
+      warn(practice.file.rel, `day_type "${practice.data.day_type}" but ${data.name} is on this date (${file.rel})`);
+    }
+  });
 }
 
 // ---- pipeline hygiene --------------------------------------------------

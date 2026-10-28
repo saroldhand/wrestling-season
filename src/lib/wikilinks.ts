@@ -7,6 +7,7 @@
  *   concepts/<id>   → /concepts/<id>
  *   practices/<date>→ /practice/<date>
  *   blocks/<id>     → /calendar#block-<id>
+ *   competitions/<id> → /schedule#<id>
  *
  * Unknown targets render as a marked <span class="broken-wikilink"> instead
  * of a dead link — visible breakage, per the fail-loudly rule. The validator
@@ -28,6 +29,7 @@ const URL_BY_DIR: Record<string, (id: string) => string> = {
   concepts: (id) => `${BASE}/concepts/${id}/`,
   practices: (id) => `${BASE}/practice/${id}/`,
   blocks: (id) => `${BASE}/calendar#block-${id}`,
+  competitions: (id) => `${BASE}/schedule#${id}`,
 };
 
 let idMap: Map<string, string> | null = null;

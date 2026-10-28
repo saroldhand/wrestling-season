@@ -3,8 +3,9 @@
 Season-planning system for a high school folkstyle program, 2026–27.
 
 An Obsidian vault (`content/`) is the writing surface and source of truth; an
-Astro static site renders it as a clickable Nov–March calendar, a searchable
-move library, a system board, and printable practice cards. There is no
+Astro static site renders it as a clickable Nov–March calendar, the varsity
+and JV competition schedule, a searchable move library, a system board, and
+printable practice cards. There is no
 server and no database — everything is markdown files with validated
 frontmatter, versioned in git.
 
@@ -27,6 +28,7 @@ Open **`content/`** (not the repo root) as the Obsidian vault.
 | `content/practices/` | One file per practice date. Filename is the ISO date. |
 | `content/blocks/` | The five macrocycle blocks: evaluate, install, volume, refine, peak. |
 | `content/concepts/` | Rules, principles, drills, protocols. |
+| `content/competitions/` | One file per competition, named `<date>-<name>`. Renders at `/schedule`. |
 | `content/private/` | **Gitignored.** Anything that identifies athletes. Never rendered. |
 | `content/_templates/` | Obsidian Templater scaffolds. |
 | `src/lib/season.ts` | The only place season dates live. |

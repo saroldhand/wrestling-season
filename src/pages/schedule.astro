@@ -1,0 +1,347 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+import { TEAMS } from '../lib/schemas.ts';
+import { blockFor, weekOf, formatDay, SEASON } from '../lib/season.ts';
+import { TEAM_LABEL, compareCompetitions, when, timeRows } from '../lib/competitions.ts';
+import { withBase } from '../lib/url.ts';
+
+const competitions = await getCollection('competitions');
+const practices = await getCollection('practices');
+const practiceDates = new Set(practices.map((p) => p.data.date));
+const practiceWeeks = new Set(practices.map((p) => p.data.week));
+
+competitions.sort((a, b) => compareCompetitions(a.data, b.data));
+
+const rows = await Promise.all(
+  competitions.map(async (entry) => {
+    const c = entry.data;
+    const week = weekOf(c.date);
+    return {
+      id: entry.id,
+      c,
+      end: c.end_date ?? c.date,
+      when: when(c),
+      week,
+      weekLink: practiceWeeks.has(week),
+      block: blockFor(c.date),
+      practiceLink: practiceDates.has(c.date),
+      times: timeRows(c),
+      Notes: entry.body?.trim() ? (await render(entry)).Content : null,
+    };
+  })
+);
+
+const months = new Map<string, typeof rows>();
+for (const row of rows) {
+  const key = row.c.date.slice(0, 7);
+  months.set(key, [...(months.get(key) ?? []), row]);
+}
+
+const filters = [
+  { value: '', label: 'All', count: rows.length },
+  ...TEAMS.map((team) => ({ value: team, label: TEAM_LABEL[team], count: rows.filter((r) => r.c.teams.includes(team)).length })),
+];
+---
+
+<Layout title="Schedule" description={`Varsity and JV competition schedule, ${SEASON}.`}>
+  <h1>Schedule</h1>
+
+  <div class="team-filter no-print" role="group" aria-label="Show team">
+    {filters.map((f) => (
+      <button type="button" class="btn" data-team-filter={f.value} aria-pressed={f.value === '' ? 'true' : 'false'}>
+        {f.label} <span class="filter-count">{f.count}</span>
+      </button>
+    ))}
+  </div>
+  <p class="muted count" id="count">{rows.length} competitions</p>
+
+  {rows.length === 0 && (
+    <p class="muted">No competitions yet — add one file per event to <code>content/competitions/</code>.</p>
+  )}
+
+  {[...months.entries()].map(([key, monthRows]) => (
+    <section class="comp-month">
+      <h2>{formatDay(`${key}-01`, { month: 'long', year: 'numeric' })}</h2>
+      <ol class="comp-list">
+        {monthRows.map((r) => (
+          <li
+            class="comp"
+            id={r.id}
+            data-teams={r.c.teams.join(' ')}
+            data-end={r.end}
+            style={r.block ? `--band: var(--${r.block})` : undefined}
+          >
+            {r.practiceLink ? (
+              <a class="comp-when" href={withBase(`/practice/${r.c.date}/`)} aria-label={`Practice plan for ${formatDay(r.c.date)}`}>
+                <span class="dow">{r.when.dow}</span>
+                <span class="day display">{r.when.day}</span>
+              </a>
+            ) : (
+              <div class="comp-when">
+                <span class="dow">{r.when.dow}</span>
+                <span class="day display">{r.when.day}</span>
+              </div>
+            )}
+
+            <div class="comp-main">
+              <h3 class="comp-name">{r.c.name}</h3>
+              <p class="comp-where">
+                {r.c.home && <span class="badge solid home">Home</span>}
+                {r.c.location ?? (!r.c.home && <span class="tba">Location TBA</span>)}
+              </p>
+              <p class="comp-tags">
+                {r.c.teams.map((team) => <span class={`badge team-${team}`}>{TEAM_LABEL[team]}</span>)}
+                {r.weekLink ? (
+                  <a class="badge meta" href={withBase(`/week/${r.week}/`)}>wk {r.week}</a>
+                ) : (
+                  <span class="badge meta">wk {r.week}</span>
+                )}
+                {r.block && <span class={`badge solid meta block-${r.block}`}>{r.block}</span>}
+                <span class="badge next-badge">Next up</span>
+              </p>
+              {r.Notes && (
+                <div class="comp-notes prose">
+                  <r.Notes />
+                </div>
+              )}
+            </div>
+
+            <dl class="comp-times">
+              {r.times.map((t) => (
+                <div>
+                  <dt>{t.label}</dt>
+                  <dd>
+                    {t.lines.map((l) => (
+                      <span class={`t${l.tba ? ' tba' : ''}`} data-team={l.team}>
+                        {l.label && <small>{l.label}</small>}
+                        {l.text}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </li>
+        ))}
+      </ol>
+    </section>
+  ))}
+
+  <p class="muted season-note no-print">
+    One file per competition in <code>content/competitions/</code>. A time that isn't set shows as TBA. Tap
+    a date for that day's practice plan.
+  </p>
+</Layout>
+
+<style>
+  .team-filter {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .team-filter .btn[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .filter-count {
+    font-weight: 500;
+    opacity: 0.7;
+  }
+  .count { margin: 0.5rem 0 1.25rem; }
+
+  .comp-month { margin-bottom: 2rem; }
+  .comp-month[hidden] { display: none; }
+  .comp-month h2 { margin-bottom: 0.6rem; }
+
+  .comp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .comp {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr) auto;
+    gap: 0.4rem 1rem;
+    align-items: start;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 6px solid var(--band, var(--line-strong));
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+    scroll-margin-top: 1rem;
+  }
+  .comp[hidden] { display: none; }
+  .comp.past { opacity: 0.55; }
+  .comp.next { box-shadow: 0 0 0 3px var(--ink); }
+  .comp:target { box-shadow: 0 0 0 3px var(--install); }
+
+  .comp-when {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    min-height: var(--tap);
+  }
+  .dow {
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  .day {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    white-space: nowrap;
+  }
+  a.comp-when .day {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  .comp-name {
+    font-size: 1.3rem;
+    margin: 0 0 0.15rem;
+  }
+  .comp-where {
+    margin: 0 0 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .comp-tags {
+    margin: 0;
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .badge.home { background: var(--ink); }
+  .badge.team-varsity { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .badge.team-jv { color: var(--ink); }
+  a.badge { text-decoration: none; }
+  .next-badge { display: none; }
+  .comp.next .next-badge { display: inline-flex; color: var(--score-red); }
+  .comp-notes { margin-top: 0.5rem; }
+  .comp-notes :global(p) { margin: 0.2em 0; }
+
+  .comp-times {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(5.5rem, auto));
+    gap: 0.25rem 1rem;
+  }
+  .comp-times dt {
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .comp-times dd {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .t {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.2rem;
+    white-space: nowrap;
+  }
+  .t[hidden] { display: none; }
+  .t small {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-right: 0.3em;
+  }
+  .tba { color: var(--line-strong); }
+
+  @media (max-width: 720px) {
+    .comp { grid-template-columns: 4.75rem minmax(0, 1fr); }
+    .comp-times {
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      padding-top: 0.4rem;
+    }
+  }
+
+  .season-note { margin-top: -0.5rem; }
+
+  /* print: the sheet that goes on the wall — respects the team filter */
+  @media print {
+    h1 { font-size: 20pt; margin-bottom: 4pt; }
+    .count { margin: 0 0 8pt; }
+    .comp-month { margin-bottom: 10pt; break-inside: avoid; }
+    .comp-month h2 { font-size: 13pt; margin-bottom: 4pt; }
+    .comp-list { gap: 0; }
+    .comp {
+      border: none;
+      border-bottom: 1px solid #999;
+      border-radius: 0;
+      padding: 4pt 0;
+      break-inside: avoid;
+    }
+    .comp.past { opacity: 1; }
+    .comp.next { box-shadow: none; }
+    .meta, .next-badge { display: none !important; }
+    a.comp-when .day { text-decoration: none; }
+  }
+</style>
+
+<script>
+  const TEAMS = ['varsity', 'jv'];
+  const LABEL: Record<string, string> = { varsity: 'varsity', jv: 'JV' };
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-team-filter]')];
+  const rows = [...document.querySelectorAll<HTMLElement>('.comp')];
+  const months = [...document.querySelectorAll<HTMLElement>('.comp-month')];
+  const count = document.getElementById('count')!;
+
+  // runtime, not build time: the static build can be weeks old
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  for (const row of rows) row.classList.toggle('past', row.dataset.end! < today);
+
+  function apply(team: string) {
+    for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.teamFilter === team));
+    let shown = 0;
+    let next: HTMLElement | null = null;
+    for (const row of rows) {
+      const visible = !team || row.dataset.teams!.split(' ').includes(team);
+      row.hidden = !visible;
+      row.classList.remove('next');
+      // a start time that differs by team (the scrimmage) shows only this team's
+      row.querySelectorAll<HTMLElement>('[data-team]').forEach((line) => {
+        line.hidden = Boolean(team) && line.dataset.team !== team;
+      });
+      if (!visible) continue;
+      shown++;
+      if (!next && row.dataset.end! >= today) next = row;
+    }
+    next?.classList.add('next');
+    for (const month of months) month.hidden = !month.querySelector('.comp:not([hidden])');
+    count.textContent = team ? `${shown} ${LABEL[team]} competitions` : `${shown} competitions`;
+  }
+
+  for (const b of buttons) {
+    b.addEventListener('click', () => {
+      const team = b.dataset.teamFilter!;
+      history.replaceState(null, '', `${location.pathname}${team ? `?team=${team}` : ''}${location.hash}`);
+      apply(team);
+    });
+  }
+
+  // shareable: /schedule?team=jv
+  const fromUrl = new URLSearchParams(location.search).get('team') ?? '';
+  apply(TEAMS.includes(fromUrl) ? fromUrl : '');
+</script>

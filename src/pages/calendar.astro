@@ -1,14 +1,22 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PracticeCard from '../components/PracticeCard.astro';
+import CompetitionSummary from '../components/CompetitionSummary.astro';
 import { getCollection } from 'astro:content';
 import { isInSeason, blockFor, weekdayOf, SEASON_START, SEASON_END } from '../lib/season.ts';
+import { compareCompetitions, competitionDays, teamAbbr } from '../lib/competitions.ts';
 
 const practices = await getCollection('practices');
 const moves = await getCollection('moves');
 const blocks = await getCollection('blocks');
+const competitions = (await getCollection('competitions')).sort((a, b) => compareCompetitions(a.data, b.data));
 
 const byDate = new Map(practices.map((p) => [p.data.date, p.data]));
+// a multi-day competition shows on every day it covers
+const eventsByDate = new Map<string, typeof competitions>();
+for (const entry of competitions) {
+  for (const iso of competitionDays(entry.data)) eventsByDate.set(iso, [...(eventsByDate.get(iso) ?? []), entry]);
+}
 const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
 const blockName = new Map(blocks.map((b) => [b.data.id, b.data.name]));
 
@@ -36,6 +44,7 @@ interface Cell {
   block: string | null;
   blockStartsHere: boolean;
   practice: (typeof practices)[number]['data'] | null;
+  events: typeof competitions;
   sunday: boolean;
 }
 
@@ -55,6 +64,7 @@ function monthGrid(year: number, month: number) {
       block,
       blockStartsHere: block !== null && blocks.some((b) => b.data.id === block && b.data.start === iso),
       practice: byDate.get(iso) ?? null,
+      events: eventsByDate.get(iso) ?? [],
       sunday: weekdayOf(iso) === 0,
     });
   }
@@ -62,7 +72,8 @@ function monthGrid(year: number, month: number) {
 }
 
 const grids = MONTHS.map(({ year, month }) => monthGrid(year, month));
-const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(b.data.date));
+// every day the drawer can open: practice days plus competition days without one (Sundays)
+const drawerDates = [...new Set([...byDate.keys(), ...eventsByDate.keys()])].sort();
 ---
 
 <Layout title="Calendar" description="The season, November to March.">
@@ -75,7 +86,8 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
         <span class={`badge solid block-${b.data.id}`}>{b.data.name}</span>
       ))}
     <span class="legend-sep" aria-hidden="true">·</span>
-    <span class="legend-item"><span class="comp-key" aria-hidden="true"></span> competition</span>
+    <span class="legend-item"><span class="comp-key" aria-hidden="true"></span> competition day</span>
+    <span class="legend-item"><b class="ev-key">V</b><b class="ev-key jv">JV</b> on the schedule</span>
     <span class="legend-item"><span class="check-key" aria-hidden="true">✓</span> delivered</span>
     <span class="legend-item"><span class="flag-key" aria-hidden="true">!</span> past &amp; unfilled</span>
   </p>
@@ -90,24 +102,34 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
         {cells.map((cell) =>
           cell === null ? (
             <div class="cell blank" aria-hidden="true"></div>
-          ) : cell.practice ? (
+          ) : cell.practice || cell.events.length > 0 ? (
             <button
               type="button"
-              class={`cell day band-${cell.block}${cell.practice.day_type === 'competition' ? ' comp' : ''}${cell.practice.day_type === 'off' ? ' offday' : ''}`}
+              class={`cell day band-${cell.block}${cell.practice?.day_type === 'competition' ? ' comp' : ''}${!cell.practice || cell.practice.day_type === 'off' ? ' offday' : ''}${cell.events.length > 0 ? ' has-evs' : ''}`}
               data-date={cell.iso}
-              data-status={cell.practice.status}
+              data-status={cell.practice?.status}
               id={cell.blockStartsHere ? `block-${cell.block}` : undefined}
-              aria-label={`${cell.iso}, ${cell.practice.day_type}`}
+              aria-label={[cell.iso, cell.practice?.day_type, ...cell.events.map((e) => e.data.name)].filter(Boolean).join(', ')}
             >
               <span class="num display">{cell.num}</span>
-              <span class="tag">{DAY_TAG[cell.practice.day_type]}</span>
-              {cell.practice.primary.length > 0 && (
+              {cell.practice ? <span class="tag">{DAY_TAG[cell.practice.day_type]}</span> : <span class="tag muted">—</span>}
+              {cell.events.length > 0 && (
+                <span class="evs">
+                  {cell.events.map((e) => (
+                    <span class="ev">
+                      <b class={`ev-key${e.data.teams.includes('varsity') ? '' : ' jv'}`}>{teamAbbr(e.data)}</b>
+                      <span class="ev-name">{e.data.name}</span>
+                    </span>
+                  ))}
+                </span>
+              )}
+              {cell.practice && cell.practice.primary.length > 0 && (
                 <span class="dots" aria-label={`${cell.practice.primary.length} primary moves`}>
                   {cell.practice.primary.slice(0, 4).map(() => <i></i>)}
                   {cell.practice.primary.length > 4 && <em>+{cell.practice.primary.length - 4}</em>}
                 </span>
               )}
-              {cell.practice.status === 'delivered' && <span class="delivered" aria-label="delivered">✓</span>}
+              {cell.practice?.status === 'delivered' && <span class="delivered" aria-label="delivered">✓</span>}
             </button>
           ) : (
             <div
@@ -124,19 +146,20 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
   ))}
 
   <p class="muted season-note">
-    Season runs {SEASON_START} → {SEASON_END}. Tap any day for the practice card; link straight to a day
-    with <code>#2026-11-16</code>.
+    Season runs {SEASON_START} → {SEASON_END}. Tap any day for its practice card and competitions; link
+    straight to a day with <code>#2026-11-16</code>.
   </p>
 
-  <!-- one pre-rendered card per practice; the drawer clones the one it needs -->
-  {sortedPractices.map((p) => (
-    <template data-for={p.data.date}>
-      <PracticeCard practice={p.data} moveNames={moveNames} compact />
+  <!-- one pre-rendered set of cards per day; the drawer clones the one it needs -->
+  {drawerDates.map((iso) => (
+    <template data-for={iso}>
+      {(eventsByDate.get(iso) ?? []).map((e) => <CompetitionSummary id={e.id} competition={e.data} />)}
+      {byDate.has(iso) && <PracticeCard practice={byDate.get(iso)!} moveNames={moveNames} compact />}
     </template>
   ))}
 
   <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
-  <aside class="drawer" id="drawer" hidden aria-label="Practice">
+  <aside class="drawer" id="drawer" hidden aria-label="Day">
     <div class="drawer-bar no-print">
       <button type="button" class="btn" id="drawer-close" aria-label="Close">✕ Close</button>
     </div>
@@ -169,6 +192,24 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
     display: inline-block;
   }
   .check-key { color: var(--score-green); font-weight: 700; }
+  .ev-key {
+    flex-shrink: 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    padding: 0 0.3em;
+    border: 1.5px solid var(--ink);
+    border-radius: 2px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .ev-key.jv {
+    background: var(--card);
+    color: var(--ink);
+  }
+  .legend-item .ev-key + .ev-key { margin-left: 0.15em; }
   .flag-key {
     color: var(--danger);
     font-weight: 700;
@@ -187,7 +228,7 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr)); /* long competition names truncate, never widen a day */
     gap: 4px;
   }
   .dow {
@@ -282,6 +323,34 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
     font-size: 0.75rem;
     color: var(--ink-soft);
   }
+  /* competitions on the schedule */
+  .evs {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 0.3rem;
+  }
+  .ev {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.85rem;
+    line-height: 1.15;
+  }
+  .ev-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* keep the dots and the ✓ clear of the competition lines */
+  .cell.day.has-evs:has(.dots, .delivered) { padding-bottom: 1.5rem; }
+  @media (max-width: 700px) {
+    .evs { flex-direction: row; flex-wrap: wrap; }
+    .ev-name { display: none; }
+  }
   .delivered {
     position: absolute;
     right: 0.4rem;
@@ -339,6 +408,11 @@ const sortedPractices = [...practices].sort((a, b) => a.data.date.localeCompare(
       border-radius: 12px 12px 0 0;
       box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.25);
     }
+  }
+  .drawer-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
   .drawer-bar {
     display: flex;

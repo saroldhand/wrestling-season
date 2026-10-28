@@ -101,11 +101,16 @@ export function weekBounds(week: number): { start: string; end: string } {
   };
 }
 
+/** Every ISO date from start through end inclusive (empty if end is before start). */
+export function dateRange(start: string, end: string): string[] {
+  const days: string[] = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
+  return days;
+}
+
 /** Every ISO date from SEASON_START through SEASON_END inclusive. */
 export function seasonDays(): string[] {
-  const days: string[] = [];
-  for (let d = SEASON_START; d <= SEASON_END; d = addDays(d, 1)) days.push(d);
-  return days;
+  return dateRange(SEASON_START, SEASON_END);
 }
 
 /** Human date for display, always evaluated in UTC so it matches the ISO day. */

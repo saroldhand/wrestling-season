@@ -62,8 +62,9 @@ These rules keep those edits consistent.
 ## Orientation
 
 - `content/` — the Obsidian vault: `moves/`, `practices/` (one file per date,
-  filename is the ISO date), `blocks/`, `concepts/`, `private/` (gitignored),
-  `_templates/` (Obsidian Templater scaffolds).
+  filename is the ISO date), `blocks/`, `concepts/`, `competitions/` (one file
+  per competition, filename `<date>-<name>`; rendered at `/schedule`),
+  `private/` (gitignored), `_templates/` (Obsidian Templater scaffolds).
 - `scripts/new-move.mjs`, `scripts/new-practice.mjs` — scaffold new files;
   prefer them over hand-writing frontmatter.
 - `scripts/seed-calendar.mjs` — idempotent; fills missing practice stubs for
