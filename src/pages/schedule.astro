@@ -1,75 +1,32 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
-import { TEAMS, type Competition } from '../lib/schemas.ts';
-import { blockFor, weekOf, formatDay, dateRange, SEASON } from '../lib/season.ts';
+import { TEAMS } from '../lib/schemas.ts';
+import { blockFor, weekOf, formatDay, SEASON } from '../lib/season.ts';
+import { TEAM_LABEL, compareCompetitions, when, timeRows } from '../lib/competitions.ts';
 import { withBase } from '../lib/url.ts';
-
-type Team = (typeof TEAMS)[number];
-const TEAM_LABEL: Record<Team, string> = { varsity: 'Varsity', jv: 'JV' };
 
 const competitions = await getCollection('competitions');
 const practices = await getCollection('practices');
 const practiceDates = new Set(practices.map((p) => p.data.date));
 const practiceWeeks = new Set(practices.map((p) => p.data.week));
 
-// by date; on a shared Saturday the varsity event leads
-competitions.sort(
-  (a, b) =>
-    a.data.date.localeCompare(b.data.date) ||
-    Number(!a.data.teams.includes('varsity')) - Number(!b.data.teams.includes('varsity')) ||
-    a.data.name.localeCompare(b.data.name)
-);
-
-const dow = (iso: string) => formatDay(iso, { weekday: 'short' });
-const monthDay = (iso: string) => formatDay(iso, { month: 'short', day: 'numeric' });
-
-function when(start: string, end: string) {
-  if (start === end) return { dow: dow(start), day: monthDay(start) };
-  const sameMonth = start.slice(0, 7) === end.slice(0, 7);
-  return {
-    dow: `${dow(start)}–${dow(end)}`,
-    day: sameMonth ? `${monthDay(start)}–${formatDay(end, { day: 'numeric' })}` : `${monthDay(start)} – ${monthDay(end)}`,
-  };
-}
-
-interface Line {
-  text: string;
-  label?: string;
-  team?: Team;
-  tba?: boolean;
-}
-
-/** One line per value: a scalar, one per day (labelled by weekday), or one per team. */
-function lines(value: Competition['start' | 'weigh_in' | 'bus'], days: string[], words: Record<string, string> = {}): Line[] {
-  if (value === undefined) return [{ text: 'TBA', tba: true }];
-  if (Array.isArray(value)) return value.map((v, i) => ({ label: dow(days[i]), text: words[v] ?? v }));
-  if (typeof value === 'object') {
-    return (Object.entries(value) as [Team, string][]).map(([team, v]) => ({ label: TEAM_LABEL[team], team, text: v }));
-  }
-  return [{ text: words[value] ?? value }];
-}
+competitions.sort((a, b) => compareCompetitions(a.data, b.data));
 
 const rows = await Promise.all(
   competitions.map(async (entry) => {
     const c = entry.data;
-    const end = c.end_date ?? c.date;
-    const days = dateRange(c.date, end);
     const week = weekOf(c.date);
     return {
       id: entry.id,
       c,
-      end,
-      when: when(c.date, end),
+      end: c.end_date ?? c.date,
+      when: when(c),
       week,
       weekLink: practiceWeeks.has(week),
       block: blockFor(c.date),
       practiceLink: practiceDates.has(c.date),
-      times: [
-        { label: 'Start', lines: lines(c.start, days) },
-        { label: 'Weigh-in', lines: lines(c.weigh_in, days, { none: 'None', home: 'At home' }) },
-        { label: 'Bus', lines: lines(c.bus, days, { none: 'No bus' }) },
-      ],
+      times: timeRows(c),
       Notes: entry.body?.trim() ? (await render(entry)).Content : null,
     };
   })

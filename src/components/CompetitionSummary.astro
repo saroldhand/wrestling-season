@@ -1,0 +1,102 @@
+---
+/**
+ * One competition, compact: what the calendar drawer shows above the
+ * practice card on a competition day. Renders from plain data like
+ * PracticeCard — no collection calls here.
+ */
+import type { Competition } from '../lib/schemas.ts';
+import { TEAM_LABEL, timeRows, when } from '../lib/competitions.ts';
+import { withBase } from '../lib/url.ts';
+
+interface Props {
+  /** the competition's file id, for the /schedule anchor */
+  id: string;
+  competition: Competition;
+}
+
+const { id, competition: c } = Astro.props;
+const span = c.end_date ? when(c) : null;
+---
+
+<article class="comp-summary card">
+  <header class="cs-head">
+    <a class="cs-name display" href={withBase(`/schedule#${id}`)}>{c.name}</a>
+    {c.home && <span class="badge solid cs-home">Home</span>}
+    {c.teams.map((team) => <span class={`badge cs-${team}`}>{TEAM_LABEL[team]}</span>)}
+  </header>
+  <p class="cs-where muted">
+    {c.location ?? (!c.home && 'Location TBA')}
+    {span && <span>{c.location || !c.home ? ' · ' : ''}{span.dow} {span.day}</span>}
+  </p>
+  <dl class="cs-times">
+    {timeRows(c).map((row) => (
+      <div>
+        <dt>{row.label}</dt>
+        <dd>
+          {row.lines.map((l) => (
+            <span class={l.tba ? 'tba' : undefined}>
+              {l.label && <small>{l.label}</small>}
+              {l.text}
+            </span>
+          ))}
+        </dd>
+      </div>
+    ))}
+  </dl>
+</article>
+
+<style>
+  .comp-summary {
+    border-left: 6px solid var(--score-red);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .cs-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .cs-name {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-right: 0.35rem;
+  }
+  .cs-home { background: var(--ink); }
+  .cs-varsity { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .cs-jv { color: var(--ink); }
+  .cs-where { margin: 0; }
+  .cs-times {
+    margin: 0.2rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    border-top: 1px solid var(--line);
+    padding-top: 0.45rem;
+  }
+  .cs-times dt {
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .cs-times dd {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.15rem;
+  }
+  .cs-times small {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-right: 0.3em;
+  }
+  .tba { color: var(--line-strong); }
+</style>
