@@ -3,21 +3,25 @@ import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { weekBounds, blockFor, formatDay, SEASON_START } from '../../lib/season.ts';
 import { withBase } from '../../lib/url.ts';
+import { isPracticeDay } from '../../lib/practice-plan.ts';
 
 const practices = await getCollection('practices');
+const competitions = await getCollection('competitions');
 const weekNums = [...new Set(practices.map((p) => p.data.week))].sort((a, b) => a - b);
 
 const weeks = weekNums.map((week) => {
   const bounds = weekBounds(week);
-  const inWeek = practices.filter((p) => p.data.week === week);
-  const count = inWeek.filter((p) => p.data.day_type !== 'off').length;
+  const inWeek = practices.filter((p) => p.data.week === week && isPracticeDay(p.data.day_type));
+  const count = inWeek.length;
   const written = inWeek.filter((p) => p.data.schedule.length > 0 || p.data.primary.length > 0).length;
+  const meets = competitions.filter((c) => c.data.date <= bounds.end && (c.data.end_date ?? c.data.date) >= bounds.start).length;
   return {
     week,
     ...bounds,
     block: blockFor(bounds.start),
     count,
     written,
+    meets,
     range: `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} – ${formatDay(bounds.end, { month: 'short', day: 'numeric' })}`,
   };
 });
@@ -39,6 +43,7 @@ const weeks = weekNums.map((week) => {
           <span class="week-meta">
             <span class={`badge solid block-${w.block}`}>{w.block}</span>
             <span class="badge">{w.written}/{w.count} written</span>
+            {w.meets > 0 && <span class="badge meets">{w.meets} {w.meets === 1 ? 'meet' : 'meets'}</span>}
           </span>
         </a>
       </li>

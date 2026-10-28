@@ -3,7 +3,7 @@
  * calendar so a date or a bus time reads the same everywhere.
  */
 import { TEAMS, type Competition } from './schemas.ts';
-import { dateRange, formatDay } from './season.ts';
+import { dateRange, formatDay, weekdayOf } from './season.ts';
 
 export type Team = (typeof TEAMS)[number];
 export const TEAM_LABEL: Record<Team, string> = { varsity: 'Varsity', jv: 'JV' };
@@ -14,6 +14,23 @@ export const teamAbbr = (c: Competition) => c.teams.map((t) => TEAM_ABBR[t]).joi
 
 /** Every date the competition covers. */
 export const competitionDays = (c: Competition) => dateRange(c.date, c.end_date ?? c.date);
+
+/**
+ * Dates where a competition replaces practice: every day of every meet,
+ * except a JV-only meet on a weekday (Feb 19's JV league) — varsity still
+ * practices that afternoon.
+ */
+export function meetDates(competitions: Competition[]): Set<string> {
+  const dates = new Set<string>();
+  for (const c of competitions) {
+    for (const iso of competitionDays(c)) {
+      const weekday = weekdayOf(iso) >= 1 && weekdayOf(iso) <= 5;
+      if (weekday && !c.teams.includes('varsity')) continue;
+      dates.add(iso);
+    }
+  }
+  return dates;
+}
 
 /** By date; on a shared Saturday the varsity event leads. */
 export function compareCompetitions(a: Competition, b: Competition): number {

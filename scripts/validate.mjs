@@ -20,7 +20,8 @@
  *   - practice block/week fields that disagree with src/lib/season.ts
  *   - schedule blocks that overflow duration_min
  *   - competition days where bus → weigh-in → start isn't in time order
- *   - a practice on a competition date whose day_type isn't competition
+ *   - a practice on a meet date (see meetDates) whose day_type isn't competition
+ *   - a block template whose minutes don't add up to that day type's length
  *   - broken [[wikilinks]] in markdown bodies
  */
 import fs from 'node:fs';
@@ -28,7 +29,8 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { load as loadYaml } from 'js-yaml';
 import { moveSchema, practiceSchema, blockSchema, conceptSchema, competitionSchema, idString } from '../src/lib/schemas.ts';
-import { isInSeason, blockFor, weekOf, dateRange, SEASON_START, SEASON_END } from '../src/lib/season.ts';
+import { isInSeason, blockFor, weekOf, dateRange, DEFAULT_DURATION, SEASON_START, SEASON_END } from '../src/lib/season.ts';
+import { meetDates } from '../src/lib/competitions.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const CONTENT = path.join(ROOT, 'content');
@@ -174,6 +176,7 @@ const clockMinutes = (t) => {
 };
 const isClock = (v) => typeof v === 'string' && /^\d/.test(v);
 const practiceByDate = new Map(parsed.practices.map((p) => [p.data.date, p]));
+const meets = meetDates(parsed.competitions.map((c) => c.data));
 
 for (const { file, data } of parsed.competitions) {
   const days = dateRange(data.date, data.end_date ?? data.date);
@@ -199,10 +202,20 @@ for (const { file, data } of parsed.competitions) {
     }
 
     const practice = practiceByDate.get(iso);
-    if (practice && practice.data.day_type !== 'competition') {
+    if (practice && meets.has(iso) && practice.data.day_type !== 'competition') {
       warn(practice.file.rel, `day_type "${practice.data.day_type}" but ${data.name} is on this date (${file.rel})`);
     }
   });
+}
+
+// ---- block templates ---------------------------------------------------
+for (const { file, data } of parsed.blocks) {
+  for (const [dayType, segments] of Object.entries(data.template)) {
+    const total = segments.reduce((sum, s) => sum + s.min, 0);
+    if (total !== DEFAULT_DURATION[dayType]) {
+      warn(file.rel, `template.${dayType} adds up to ${total} min, but a ${dayType} day is ${DEFAULT_DURATION[dayType]}`);
+    }
+  }
 }
 
 // ---- pipeline hygiene --------------------------------------------------

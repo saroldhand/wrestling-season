@@ -8,9 +8,19 @@ kpis:
   - Every wrestler assessed in neutral, top, and bottom live situations
   - Pod assignments (blue/gold/white) drafted and written to private/
   - Baseline conditioning numbers recorded
+template:
+  install:
+    - { kind: warm-up, min: 20 }
+    - { kind: matball, min: 10 }
+    - { kind: teach, min: 15, note: "Expectations, the warm-up routine, stance and motion" }
+    - { kind: water, min: 5 }
+    - { kind: live, min: 30, note: "Assessment goes: every kid in neutral, top, and bottom" }
+    - { kind: water, min: 5 }
+    - { kind: conditioning, min: 25, note: "Baseline numbers" }
+    - { kind: close, min: 10, note: "What happens next" }
 ---
 
-Three days, one weekend. Nothing is taught — everything is watched. The
-output of this block is the pod sort and an honest read on what last year's
-returners actually kept, which decides what [[install]] spends its five
-weeks on.
+One practice — Friday, the first day. Nothing is taught — everything is
+watched. The output is a draft pod sort and an honest read on what last
+year's returners actually kept; the Nov 21 scrimmage confirms the sort, and
+together they decide what [[install]] spends its five weeks on.

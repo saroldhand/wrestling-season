@@ -1,9 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import PracticeCard from '../../components/PracticeCard.astro';
+import CompetitionSummary from '../../components/CompetitionSummary.astro';
 import { getCollection } from 'astro:content';
 import { weekBounds, blockFor, formatDay, addDays, weekdayOf } from '../../lib/season.ts';
 import { withBase } from '../../lib/url.ts';
+import { loadPlanContext } from '../../lib/plan-context.ts';
+import { isPracticeDay } from '../../lib/practice-plan.ts';
+import { compareCompetitions, competitionDays } from '../../lib/competitions.ts';
 
 export async function getStaticPaths() {
   const practices = await getCollection('practices');
@@ -18,13 +22,17 @@ const block = blockFor(bounds.start);
 const practices = await getCollection('practices');
 const moves = await getCollection('moves');
 const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+const plan = await loadPlanContext();
 const byDate = new Map(practices.map((p) => [p.data.date, p.data]));
+const competitions = (await getCollection('competitions')).sort((a, b) => compareCompetitions(a.data, b.data));
 
-// every calendar day in the week, practice file or not
-const days: { iso: string; practice: (typeof practices)[number]['data'] | null }[] = [];
+// every calendar day in the week, practice file or not, with its meets
+const days: { iso: string; practice: (typeof practices)[number]['data'] | null; meets: typeof competitions }[] = [];
 for (let iso = bounds.start; iso <= bounds.end; iso = addDays(iso, 1)) {
-  days.push({ iso, practice: byDate.get(iso) ?? null });
+  const meets = competitions.filter((c) => competitionDays(c.data).includes(iso));
+  days.push({ iso, practice: byDate.get(iso) ?? null, meets });
 }
+const meetCount = new Set(days.flatMap((d) => d.meets.map((m) => m.id))).size;
 
 // the Sunday-night read: everything on the whiteboard this week
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -45,10 +53,9 @@ const rows = [
   { label: 'Film', map: film, cls: 'film' },
 ].filter((r) => r.map.size > 0);
 
-const practiceCount = days.filter((d) => d.practice && d.practice.day_type !== 'off').length;
-const writtenCount = days.filter(
-  (d) => d.practice && (d.practice.schedule.length > 0 || d.practice.primary.length > 0)
-).length;
+const practiceDays = days.filter((d) => d.practice && isPracticeDay(d.practice.day_type));
+const practiceCount = practiceDays.length;
+const writtenCount = practiceDays.filter((d) => d.practice!.schedule.length > 0 || d.practice!.primary.length > 0).length;
 
 const i = weeks.indexOf(week);
 const prev = i > 0 ? weeks[i - 1] : null;
@@ -61,7 +68,7 @@ const range = `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} ‚Ä
   <nav class="week-nav no-print" aria-label="Week navigation">
     {prev !== null ? <a class="btn" href={withBase(`/week/${prev}/`)}>‚Üê Wk {prev}</a> : <span></span>}
     <a class="btn" href={withBase('/week/#all')}>All weeks</a>
-    <a class="btn" href={withBase(`/calendar#${bounds.start}`)}>Calendar</a>
+    <a class="btn cal-btn" href={withBase(`/calendar#${bounds.start}`)}>Calendar</a>
     {next !== null ? <a class="btn" href={withBase(`/week/${next}/`)}>Wk {next} ‚Üí</a> : <span></span>}
   </nav>
 
@@ -70,6 +77,7 @@ const range = `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} ‚Ä
     <p class="week-badges">
       {block && <span class={`badge solid block-${block}`}>{block}</span>}
       <span class="badge">{practiceCount} practices</span>
+      {meetCount > 0 && <span class="badge">{meetCount} {meetCount === 1 ? 'meet' : 'meets'}</span>}
       <span class={`badge ${writtenCount < practiceCount ? 'thin' : 'ok'}`}>
         {writtenCount} of {practiceCount} written
       </span>
@@ -103,9 +111,12 @@ const range = `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} ‚Ä
   </section>
 
   <div class="week-days">
-    {days.map(({ iso, practice }) =>
-      practice ? (
-        <PracticeCard practice={practice} moveNames={moveNames} compact />
+    {days.map(({ iso, practice, meets }) =>
+      practice || meets.length > 0 ? (
+        <div class="day-stack">
+          {meets.map((m) => <CompetitionSummary id={m.id} competition={m.data} />)}
+          {practice && <PracticeCard practice={practice} moveNames={moveNames} plan={plan} compact />}
+        </div>
       ) : (
         <div class="rest-day card" data-date={iso}>
           <span class="display rest-date">{formatDay(iso, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
@@ -123,6 +134,9 @@ const range = `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} ‚Ä
     justify-content: space-between;
     flex-wrap: wrap;
     margin-bottom: 1rem;
+  }
+  @media (max-width: 600px) {
+    .cal-btn { display: none; } /* calendar is in the nav; keep this to one row */
   }
   .week-header h1 { margin-bottom: 0.4rem; }
   .range {
@@ -190,6 +204,11 @@ const range = `${formatDay(bounds.start, { month: 'short', day: 'numeric' })} ‚Ä
     grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
     gap: 1rem;
     align-items: start;
+  }
+  .day-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
   .rest-day {
     display: flex;

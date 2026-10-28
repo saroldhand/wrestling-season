@@ -5,6 +5,7 @@ import CompetitionSummary from '../components/CompetitionSummary.astro';
 import { getCollection } from 'astro:content';
 import { isInSeason, blockFor, weekdayOf, SEASON_START, SEASON_END } from '../lib/season.ts';
 import { compareCompetitions, competitionDays, teamAbbr } from '../lib/competitions.ts';
+import { loadPlanContext } from '../lib/plan-context.ts';
 
 const practices = await getCollection('practices');
 const moves = await getCollection('moves');
@@ -18,6 +19,7 @@ for (const entry of competitions) {
   for (const iso of competitionDays(entry.data)) eventsByDate.set(iso, [...(eventsByDate.get(iso) ?? []), entry]);
 }
 const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+const plan = await loadPlanContext();
 const blockName = new Map(blocks.map((b) => [b.data.id, b.data.name]));
 
 // Nov 2026 → Mar 2027, Monday-first grids.
@@ -137,7 +139,7 @@ const drawerDates = [...new Set([...byDate.keys(), ...eventsByDate.keys()])].sor
               id={cell.blockStartsHere ? `block-${cell.block}` : undefined}
             >
               <span class="num display">{cell.num}</span>
-              {cell.inSeason && cell.sunday && <span class="tag muted">—</span>}
+              {cell.inSeason && <span class="tag muted">—</span>}
             </div>
           )
         )}
@@ -154,7 +156,7 @@ const drawerDates = [...new Set([...byDate.keys(), ...eventsByDate.keys()])].sor
   {drawerDates.map((iso) => (
     <template data-for={iso}>
       {(eventsByDate.get(iso) ?? []).map((e) => <CompetitionSummary id={e.id} competition={e.data} />)}
-      {byDate.has(iso) && <PracticeCard practice={byDate.get(iso)!} moveNames={moveNames} compact />}
+      {byDate.has(iso) && <PracticeCard practice={byDate.get(iso)!} moveNames={moveNames} plan={plan} compact />}
     </template>
   ))}
 

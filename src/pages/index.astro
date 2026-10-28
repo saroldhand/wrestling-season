@@ -5,10 +5,13 @@ import { getCollection } from 'astro:content';
 import { MOVE_STATUSES } from '../lib/schemas.ts';
 import { SEASON_START, weekOf } from '../lib/season.ts';
 import { withBase } from '../lib/url.ts';
+import { loadPlanContext } from '../lib/plan-context.ts';
+import { isPracticeDay } from '../lib/practice-plan.ts';
 
 const practices = await getCollection('practices');
 const moves = await getCollection('moves');
 const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+const plan = await loadPlanContext();
 
 const sorted = [...practices].sort((a, b) => a.data.date.localeCompare(b.data.date));
 
@@ -16,8 +19,8 @@ const sorted = [...practices].sort((a, b) => a.data.date.localeCompare(b.data.da
 // today (a static build can be days old) and swaps in a banner if it moved.
 const buildToday = new Date().toISOString().slice(0, 10);
 const next =
-  sorted.find((p) => p.data.date >= buildToday && p.data.day_type !== 'off') ??
-  sorted.find((p) => p.data.day_type !== 'off');
+  sorted.find((p) => p.data.date >= buildToday && isPracticeDay(p.data.day_type)) ??
+  sorted.find((p) => isPracticeDay(p.data.day_type));
 
 // compact JSON for the runtime corrections
 const summaries = sorted.map((p) => ({
@@ -58,11 +61,11 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
   <div class="dash">
     <section class="dash-next">
       <h2>Next practice</h2>
-      <p class="flag" id="next-moved" hidden>
-        The build is stale — actual next practice: <a id="next-moved-link" href={withBase('/calendar')}>see calendar</a>
-      </p>
+      <!-- the card below is picked at build time; if the site is older than
+           today, the script hides it and points here instead -->
+      <a class="btn primary next-link" id="next-moved" href={withBase('/calendar')} hidden></a>
       {next ? (
-        <PracticeCard practice={next.data} moveNames={moveNames} compact />
+        <PracticeCard practice={next.data} moveNames={moveNames} plan={plan} compact />
       ) : (
         <p class="muted">No practices in the vault. Run <code>npm run seed</code>.</p>
       )}
@@ -152,8 +155,10 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
     gap: 4px;
   }
   .week-strip:empty { display: none; }
-  .week-strip li a,
-  .week-strip li span {
+  /* strip days and flag rows are built by the script below, so they carry no
+     scoped-style attribute — reach them through :global() */
+  .week-strip :global(li a),
+  .week-strip :global(li > span) {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -167,18 +172,25 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
     gap: 1px;
     padding: 0.2rem 0;
   }
-  .week-strip .dnum {
+  .week-strip :global(.dnum) {
     font-family: var(--display);
     font-weight: 700;
     font-size: 1rem;
   }
-  .week-strip .is-today a {
+  .week-strip :global(.is-today a) {
     outline: 2.5px solid var(--ink);
   }
-  .week-strip .rest span { color: var(--line-strong); }
-  .week-strip .overdue a { border-color: var(--danger); color: var(--danger); }
-  .week-strip .delivered a { border-color: var(--score-green); }
+  .week-strip :global(.rest span) { color: var(--line-strong); }
+  .week-strip :global(.overdue a) { border-color: var(--danger); color: var(--danger); }
+  .week-strip :global(.delivered a) { border-color: var(--score-green); }
 
+  .next-link {
+    width: 100%;
+    min-height: 56px;
+    font-size: 1.2rem;
+  }
+  .next-link[hidden],
+  .dash-next :global(.practice-card[hidden]) { display: none; }
   .flag-list {
     list-style: none;
     margin: 0;
@@ -187,7 +199,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
     flex-direction: column;
     gap: 4px;
   }
-  .flag-list li a {
+  .flag-list :global(li a) {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -228,16 +240,18 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
 
   const now = new Date();
   const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const fmt = (iso: string, weekday: 'long' | 'short' = 'short') =>
+    new Intl.DateTimeFormat('en-US', { weekday, month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
 
   // --- next practice: flag if the build's pick is out of date -------------
   const rendered = document.querySelector<HTMLElement>('.dash-next .practice-card')?.dataset.date;
-  const actualNext = data.find((p) => p.d >= today && p.t !== 'off');
+  const actualNext = data.find((p) => p.d >= today && p.t !== 'off' && p.t !== 'competition');
   if (actualNext && rendered && actualNext.d !== rendered) {
-    const banner = document.getElementById('next-moved')!;
-    const link = document.getElementById('next-moved-link') as HTMLAnchorElement;
+    const link = document.getElementById('next-moved') as HTMLAnchorElement;
     link.href = withBase(`/practice/${actualNext.d}/`);
-    link.textContent = actualNext.d;
-    banner.hidden = false;
+    link.textContent = `${fmt(actualNext.d, 'long')} — open practice →`;
+    link.hidden = false;
+    document.querySelector<HTMLElement>('.dash-next .practice-card')!.hidden = true;
   }
 
   // --- this week strip ----------------------------------------------------
@@ -248,6 +262,8 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
   const anchor = new Date(`${anchorISO}T00:00:00Z`);
   const monday = new Date(anchor.getTime() - ((anchor.getUTCDay() + 6) % 7) * 86400000);
   const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  // same day tags as the calendar
+  const TAG: Record<string, string> = { install: 'ins', volume: 'vol', sharpen: 'shp', competition: 'comp', off: 'off' };
   let any = false;
   for (let i = 0; i < 7; i++) {
     const day = new Date(monday.getTime() + i * 86400000);
@@ -261,7 +277,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
       if (p.s === 'planned' && iso < today) li.classList.add('overdue');
       const a = document.createElement('a');
       a.href = withBase(`/practice/${iso}/`);
-      a.innerHTML = `<span class="dnum">${day.getUTCDate()}</span><span>${p.t === 'off' ? 'off' : p.t.slice(0, 4)}</span>`;
+      a.innerHTML = `<span class="dnum">${day.getUTCDate()}</span><span>${TAG[p.t] ?? p.t}</span>`;
       li.appendChild(a);
     } else {
       li.classList.add('rest');
@@ -285,7 +301,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
       const li = document.createElement('li');
       const a = document.createElement('a');
       a.href = withBase(`/practice/${p.d}/`);
-      a.innerHTML = `<span>${p.d}</span><span>planned, never delivered</span>`;
+      a.innerHTML = `<span>${fmt(p.d)}</span><span>planned, never delivered</span>`;
       li.appendChild(a);
       list.appendChild(li);
     }

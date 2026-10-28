@@ -5,6 +5,9 @@
  *
  *   npm run new:practice -- --date 2026-12-03 [--day-type sharpen] [--duration 90]
  *
+ * day_type defaults from the weekly rhythm and the meets in
+ * content/competitions/; duration from the day type.
+ *
  * Refuses to overwrite an existing file — practices are the season record.
  */
 import fs from 'node:fs';
@@ -18,9 +21,11 @@ import {
   weekOf,
   defaultDayType,
   weekdayOf,
+  DEFAULT_DURATION,
   SEASON_START,
   SEASON_END,
 } from '../src/lib/season.ts';
+import { loadMeets } from './lib/meets.mjs';
 
 const DIR = path.resolve(import.meta.dirname, '..', 'content', 'practices');
 
@@ -28,7 +33,7 @@ const { values: args } = parseArgs({
   options: {
     date: { type: 'string' },
     'day-type': { type: 'string' },
-    duration: { type: 'string', default: '120' },
+    duration: { type: 'string' },
   },
 });
 
@@ -54,7 +59,7 @@ if (fs.existsSync(file)) {
   process.exit(1);
 }
 
-const dayType = args['day-type'] ?? defaultDayType(date) ?? 'install';
+const dayType = args['day-type'] ?? defaultDayType(date, loadMeets()) ?? 'install';
 if (!DAY_TYPES.includes(dayType)) {
   console.error(`✗ day-type "${dayType}" must be one of: ${DAY_TYPES.join(' | ')}`);
   process.exit(1);
@@ -70,7 +75,7 @@ date: ${date}
 day_type: ${dayType}
 block: ${blockFor(date)}
 week: ${weekOf(date)}
-duration_min: ${Number(args.duration)}
+duration_min: ${Number(args.duration ?? DEFAULT_DURATION[dayType])}
 primary: []
 spiral: []
 schedule: []

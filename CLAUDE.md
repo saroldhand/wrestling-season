@@ -67,8 +67,14 @@ These rules keep those edits consistent.
   `private/` (gitignored), `_templates/` (Obsidian Templater scaffolds).
 - `scripts/new-move.mjs`, `scripts/new-practice.mjs` — scaffold new files;
   prefer them over hand-writing frontmatter.
+- `blocks/*.md` carry each phase's practice `template` — minutes per segment
+  for install / volume / sharpen days — which a practice card shows until its
+  own `schedule` is written. Concepts of type drill / situation / live /
+  conditioning are the idea bank the practice page offers in each segment.
 - `scripts/seed-calendar.mjs` — idempotent; fills missing practice stubs for
-  the season, never overwrites an existing file.
+  the season (day types from the weekly rhythm in `season.ts` and the meets
+  in `competitions/`), never overwrites an existing file. `--resync` brings
+  untouched stubs back in line after the schedule changes.
 - `scripts/validate.mjs` — the gate described in rule 5.
 - Site pages are in `src/pages/`; shared date math in `src/lib/season.ts`;
   wikilink resolution in `src/lib/wikilinks.ts`.

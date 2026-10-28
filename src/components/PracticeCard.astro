@@ -2,11 +2,14 @@
 /**
  * The practice card: schedule blocks, primary/spiral moves, film, pod notes.
  * Used three ways — inside the calendar drawer, on /practice/[date], and on
- * the dashboard — so it renders from plain data, no collection calls here.
+ * the dashboard — so it renders from plain data, no collection calls here;
+ * block templates and the idea bank arrive through `plan`.
  */
-import type { Practice } from '../lib/schemas.ts';
-import { formatDay } from '../lib/season.ts';
+import type { Practice, SegmentKind } from '../lib/schemas.ts';
+import { formatDay, MILESTONES } from '../lib/season.ts';
 import { withBase } from '../lib/url.ts';
+import { practiceTimeline, IDEA_TYPE, isPracticeDay } from '../lib/practice-plan.ts';
+import type { PlanContext } from '../lib/plan-context.ts';
 
 interface Props {
   practice: Practice;
@@ -16,9 +19,11 @@ interface Props {
   compact?: boolean;
   /** the practice page has the date as its H1 already */
   showDate?: boolean;
+  /** block templates + idea bank, from loadPlanContext() */
+  plan: PlanContext;
 }
 
-const { practice: p, moveNames, compact = false, showDate = true } = Astro.props;
+const { practice: p, moveNames, compact = false, showDate = true, plan } = Astro.props;
 
 const moveLink = (id: string) => ({ id, name: moveNames.get(id) ?? id, href: withBase(`/moves/${id}/`) });
 const primary = p.primary.map(moveLink);
@@ -26,6 +31,13 @@ const spiral = p.spiral.map(moveLink);
 const film = p.film ? moveLink(p.film) : null;
 const pods = (['blue', 'gold', 'white'] as const).filter((pod) => p.pod_notes[pod]);
 const off = p.day_type === 'off';
+const template = p.day_type === 'install' || p.day_type === 'volume' || p.day_type === 'sharpen' ? plan.templates.get(p.block)?.[p.day_type] : undefined;
+const { segments, fromTemplate } = practiceTimeline(p, template);
+// the idea bank for a segment, narrowed to ideas that fit this phase
+const ideasFor = (kind?: SegmentKind) => {
+  const type = kind && IDEA_TYPE[kind];
+  return type ? (plan.ideas.get(type) ?? []).filter((i) => i.blocks.length === 0 || i.blocks.includes(p.block)) : [];
+};
 ---
 
 <article class="practice-card card" data-date={p.date} data-status={p.status}>
@@ -37,7 +49,7 @@ const off = p.day_type === 'off';
         showDate && <span class="pc-date display">{formatDay(p.date)}</span>
       )}
       <span class={`badge solid block-${p.block}`}>{p.block}</span>
-      <span class="badge">{p.day_type}</span>
+      <span class="badge">{isPracticeDay(p.day_type) ? `${p.day_type} day` : p.day_type}</span>
       <span class="badge">wk {p.week}</span>
       {p.status === 'delivered' ? (
         <span class="badge delivered">✓ delivered</span>
@@ -45,30 +57,50 @@ const off = p.day_type === 'off';
         <span class="badge planned" data-planned-badge>planned</span>
       )}
     </div>
-    {!off && <span class="pc-duration display">{p.duration_min}′</span>}
+    {isPracticeDay(p.day_type) && <span class="pc-duration display">{p.duration_min}′</span>}
   </header>
+
+  {MILESTONES[p.date] && <p class="pc-milestone">{MILESTONES[p.date]}</p>}
 
   {off ? (
     <p class="muted">No practice — off day.</p>
   ) : (
     <>
-      {p.schedule.length > 0 ? (
-        <table class="pc-schedule">
-          <tbody>
-            {p.schedule.map((item) => (
-              <tr>
-                <td class="t">{item.start}</td>
-                <td class="len">{item.len}′</td>
-                <td>
-                  <strong>{item.label}</strong>
-                  {item.detail && <span class="muted"> — {item.detail}</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {segments.length > 0 ? (
+        <>
+          {fromTemplate && (
+            <p class="muted pc-template">
+              Default {p.block}-phase {p.day_type} day — write a <code>schedule</code> in the file to replace it.
+            </p>
+          )}
+          <table class="pc-schedule">
+            <tbody>
+              {segments.map((s) => {
+                const ideas = compact ? [] : ideasFor(s.kind);
+                return (
+                  <tr class={s.kind === 'water' ? 'seg-water' : undefined}>
+                    <td class="t">{s.clock}</td>
+                    <td class="len">{s.len}′</td>
+                    <td>
+                      <strong>{s.label}</strong>
+                      {s.detail && <span class="muted"> — {s.detail}</span>}
+                      {ideas.length > 0 && (
+                        <details class="pc-ideas no-print">
+                          <summary>{ideas.length} {s.label.toLowerCase()} ideas</summary>
+                          <span class="idea-list">
+                            {ideas.map((i) => <a class="idea" href={withBase(`/concepts/${i.id}/`)}>{i.name}</a>)}
+                          </span>
+                        </details>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
       ) : (
-        <p class="muted pc-empty">No schedule written yet.</p>
+        <p class="muted pc-empty">{p.day_type === 'competition' ? 'Competition day.' : 'No schedule written yet.'}</p>
       )}
 
       {(primary.length > 0 || spiral.length > 0 || film) && (
@@ -183,6 +215,59 @@ const off = p.day_type === 'off';
     color: var(--ink-soft);
     white-space: nowrap;
     width: 2.8rem;
+  }
+  .pc-schedule .seg-water td {
+    color: var(--ink-soft);
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+  }
+  .pc-schedule .seg-water strong {
+    font-weight: 400;
+  }
+  .pc-template {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  .pc-milestone {
+    margin: 0;
+    padding: 0.45rem 0.8rem;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    font-weight: 600;
+  }
+  .pc-ideas {
+    margin-top: 0.3rem;
+  }
+  .pc-ideas summary {
+    cursor: pointer;
+    font-family: var(--display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.85rem;
+    color: var(--install);
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+  .idea-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.3rem 0 0.2rem;
+  }
+  .idea {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 0.7rem;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    background: var(--card);
   }
 
   .pc-moves {
