@@ -24,5 +24,6 @@ not.
 Ten minutes, full effort, winners talk. It's conditioning that doesn't feel
 like conditioning — protect it.
 
-Practice cards ([[2026-11-16|example]]) assume this block has already
-happened; their `0:00` is the first technique whistle.
+It's the first 30 minutes of every practice card ([[2026-11-16|example]]):
+schedule times count from the 5:00 whistle, and every block template in
+`blocks/` opens with it.

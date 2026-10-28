@@ -5,10 +5,12 @@ import { getCollection } from 'astro:content';
 import { MOVE_STATUSES } from '../lib/schemas.ts';
 import { SEASON_START, weekOf } from '../lib/season.ts';
 import { withBase } from '../lib/url.ts';
+import { loadPlanContext } from '../lib/plan-context.ts';
 
 const practices = await getCollection('practices');
 const moves = await getCollection('moves');
 const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+const plan = await loadPlanContext();
 
 const sorted = [...practices].sort((a, b) => a.data.date.localeCompare(b.data.date));
 
@@ -62,7 +64,7 @@ const overloaded = p1ByPosition.filter((x) => x.count > 5);
         The build is stale — actual next practice: <a id="next-moved-link" href={withBase('/calendar')}>see calendar</a>
       </p>
       {next ? (
-        <PracticeCard practice={next.data} moveNames={moveNames} compact />
+        <PracticeCard practice={next.data} moveNames={moveNames} plan={plan} compact />
       ) : (
         <p class="muted">No practices in the vault. Run <code>npm run seed</code>.</p>
       )}

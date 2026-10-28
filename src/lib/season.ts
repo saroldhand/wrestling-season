@@ -39,20 +39,38 @@ export const HOLIDAYS: Record<string, string> = {
   '2027-01-01': "New Year's Day",
 };
 
+/** Practice days with something on them besides practice. */
+export const MILESTONES: Record<string, string> = {
+  '2026-11-25': 'Hydration testing',
+};
+
 /**
  * The weekly rhythm: default day_type by UTC weekday (0 = Sunday).
- * `null` means no practice file is generated for that weekday.
- * Actual sequencing is being reworked (§11) — these are seed defaults only.
+ * `null` means no practice — a Saturday only gets a file when there's a meet.
+ * Monday teaches (weekend recap, film, what's pressing), Tuesday–Thursday
+ * are the wrestling and conditioning days, Friday sharpens and makes weight.
  */
 export const DAY_TYPE_BY_WEEKDAY: (DayType | null)[] = [
   null, // Sun — no practice
   'install', // Mon
   'volume', // Tue
-  'install', // Wed
-  'sharpen', // Thu
-  'competition', // Fri — duals
-  'competition', // Sat — tournaments
+  'volume', // Wed
+  'volume', // Thu
+  'sharpen', // Fri — make weight for Saturday
+  null, // Sat — meets only
 ];
+
+/** Practice starts at 5:00pm; schedule `start` offsets count from here. */
+export const PRACTICE_START = '17:00';
+
+/** Default practice length by day_type: two full hours, Fridays end a little early. */
+export const DEFAULT_DURATION: Record<DayType, number> = {
+  install: 120,
+  volume: 120,
+  sharpen: 105,
+  competition: 120,
+  off: 0,
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -121,14 +139,35 @@ export function formatDay(
   return new Intl.DateTimeFormat('en-US', { ...options, timeZone: 'UTC' }).format(toDate(iso));
 }
 
+/** Clock time `offsetMin` minutes into practice, e.g. 30 → "5:30". */
+export function practiceClock(offsetMin: number): string {
+  const [h, m] = PRACTICE_START.split(':').map(Number);
+  const total = h * 60 + m + offsetMin;
+  return `${((Math.floor(total / 60) + 11) % 12) + 1}:${String(total % 60).padStart(2, '0')}`;
+}
+
 /**
- * Default day_type for a date: holidays are `off`, Sundays get no practice
- * (null), everything else follows the weekly rhythm.
+ * Default day_type for a date. `meets` holds the dates where a competition
+ * replaces practice (see meetDates in competitions.ts). Sundays never get a
+ * practice; holidays are off; a meet day is competition; the last practice
+ * before a meet sharpens and makes weight; everything else follows the
+ * weekly rhythm (null = no practice).
  */
-export function defaultDayType(iso: string): DayType | null {
+export function defaultDayType(iso: string, meets: ReadonlySet<string> = new Set()): DayType | null {
+  if (weekdayOf(iso) === 0) return null;
   if (HOLIDAYS[iso]) return 'off';
-  // The evaluate weekend is assessment work, not competition, whatever the
-  // weekday rhythm says (still no Sunday practice).
-  if (blockFor(iso) === 'evaluate' && weekdayOf(iso) !== 0) return 'install';
-  return DAY_TYPE_BY_WEEKDAY[weekdayOf(iso)];
+  if (meets.has(iso)) return 'competition';
+  const base = DAY_TYPE_BY_WEEKDAY[weekdayOf(iso)];
+  if (base === null) return null;
+  // Evaluation day is assessment work, whatever the weekday says.
+  if (blockFor(iso) === 'evaluate') return 'install';
+  return meetBeforeNextPractice(iso, meets) ? 'sharpen' : base;
+}
+
+function meetBeforeNextPractice(iso: string, meets: ReadonlySet<string>): boolean {
+  for (let d = addDays(iso, 1); isInSeason(d); d = addDays(d, 1)) {
+    if (meets.has(d)) return true;
+    if (!HOLIDAYS[d] && DAY_TYPE_BY_WEEKDAY[weekdayOf(d)] !== null) return false;
+  }
+  return false;
 }

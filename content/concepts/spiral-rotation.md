@@ -9,8 +9,8 @@ How installed technique stays sharp: spaced, shuffled review instead of
 block review. Every practice file has a `spiral` list — two or three
 previously-installed moves that get short, high-quality touches that day.
 
-- **Station format:** 3 stations × 3 minutes inside the first quarter of
-  practice, before the day's install.
+- **Station format:** 3 stations × 3 minutes at the top of the day's drill
+  segment.
 - **Selection rule:** nothing sits untouched longer than 10 days; the
   dashboard's status rollup and (later) a Dataview query surface what's
   going stale.

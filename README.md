@@ -41,6 +41,7 @@ Open **`content/`** (not the repo root) as the Obsidian vault.
 npm run validate            # schema + referential integrity + season rules
 npm run validate:strict     # warnings fail too (CI uses this posture eventually)
 npm run seed                # fill missing practice stubs for the season (idempotent)
+npm run seed -- --resync    # after a schedule change: fix day types on untouched stubs
 npm run new:move            # scaffold a move   (prompts, or flags: --id --name --position ...)
 npm run new:practice        # scaffold a practice (prompts, or flags: --date ...)
 ```

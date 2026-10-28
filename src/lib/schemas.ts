@@ -32,7 +32,21 @@ export const PROVIDERS = ['rudis', 'ocean', 'flo', 'usaw', 'youtube', 'facebook'
 export const DAY_TYPES = ['install', 'volume', 'sharpen', 'competition', 'off'] as const;
 export const BLOCK_IDS = ['evaluate', 'install', 'volume', 'refine', 'peak'] as const;
 export const PRACTICE_STATUSES = ['planned', 'delivered'] as const;
-export const CONCEPT_TYPES = ['rule', 'principle', 'drill', 'protocol'] as const;
+// drill / situation / live / conditioning are the idea bank the practice page
+// offers inside the matching schedule segment
+export const CONCEPT_TYPES = ['rule', 'principle', 'protocol', 'drill', 'situation', 'live', 'conditioning'] as const;
+/** What each stretch of a practice is. Warm-up + matball open every day; water and close are the talking time. */
+export const SEGMENT_KINDS = [
+  'warm-up',
+  'matball',
+  'teach',
+  'drill',
+  'situations',
+  'live',
+  'conditioning',
+  'water',
+  'close',
+] as const;
 export const TEAMS = ['varsity', 'jv'] as const;
 
 /**
@@ -93,10 +107,11 @@ export const moveSchema = z
 
 export const scheduleItemSchema = z
   .object({
-    start: z.string().regex(/^\d+:\d{2}$/, 'start is elapsed time like "0:22"'),
+    start: z.string().regex(/^\d+:\d{2}$/, 'start is elapsed time from the 5:00 whistle, like "0:30"'),
     len: z.number().int().positive(),
     label: z.string().min(1),
     detail: z.string().optional(),
+    kind: z.enum(SEGMENT_KINDS).optional(),
   })
   .strict();
 
@@ -128,6 +143,15 @@ export const practiceSchema = z
     }
   });
 
+/** One stretch of a block's practice template; minutes run back to back from 5:00. */
+export const templateSegmentSchema = z
+  .object({
+    kind: z.enum(SEGMENT_KINDS),
+    min: z.number().int().positive(),
+    note: z.string().optional(),
+  })
+  .strict();
+
 export const blockSchema = z
   .object({
     id: z.enum(BLOCK_IDS),
@@ -136,6 +160,9 @@ export const blockSchema = z
     end: flexibleDate,
     objective: z.string().min(1),
     kpis: z.array(z.string()).default([]),
+    // how this phase spends a practice, by day type — the card's default
+    // schedule until a practice's own schedule is written
+    template: z.record(z.enum(['install', 'volume', 'sharpen']), z.array(templateSegmentSchema)).default({}),
   })
   .strict();
 
@@ -144,6 +171,7 @@ export const conceptSchema = z
     id: idString,
     name: z.string().min(1),
     type: z.enum(CONCEPT_TYPES),
+    blocks: z.array(z.enum(BLOCK_IDS)).default([]), // phases an idea fits; empty = any
     tags: z.array(z.string()).default([]),
   })
   .strict();
@@ -214,4 +242,6 @@ export type Move = z.infer<typeof moveSchema>;
 export type Practice = z.infer<typeof practiceSchema>;
 export type Block = z.infer<typeof blockSchema>;
 export type Concept = z.infer<typeof conceptSchema>;
+export type TemplateSegment = z.infer<typeof templateSegmentSchema>;
+export type SegmentKind = (typeof SEGMENT_KINDS)[number];
 export type Competition = z.infer<typeof competitionSchema>;

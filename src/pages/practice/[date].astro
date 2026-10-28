@@ -4,6 +4,7 @@ import PracticeCard from '../../components/PracticeCard.astro';
 import { getCollection, render } from 'astro:content';
 import { formatDay } from '../../lib/season.ts';
 import { withBase } from '../../lib/url.ts';
+import { loadPlanContext } from '../../lib/plan-context.ts';
 
 export async function getStaticPaths() {
   const practices = await getCollection('practices');
@@ -16,6 +17,7 @@ const { Content } = await render(entry);
 
 const moves = await getCollection('moves');
 const moveNames = new Map(moves.map((m) => [m.data.id, m.data.name]));
+const plan = await loadPlanContext();
 
 const practices = await getCollection('practices');
 const dates = practices
@@ -42,7 +44,7 @@ const hasNotes = entry.body && entry.body.trim().replace(/^## After-practice not
   </header>
 
   <div class="practice-sheet">
-    <PracticeCard practice={p} moveNames={moveNames} showDate={false} />
+    <PracticeCard practice={p} moveNames={moveNames} plan={plan} showDate={false} />
 
     <section class="notes prose">
       <Content />
