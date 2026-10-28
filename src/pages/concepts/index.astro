@@ -13,12 +13,15 @@ const groups = CONCEPT_TYPES.map((type) => ({
 const TYPE_LABEL: Record<string, string> = {
   rule: 'Rules',
   principle: 'Principles',
-  drill: 'Drills',
   protocol: 'Protocols',
+  drill: 'Drills',
+  situation: 'Situations',
+  live: 'Live formats',
+  conditioning: 'Conditioning',
 };
 ---
 
-<Layout title="Concepts" description="Rules, principles, drills, and protocols.">
+<Layout title="Concepts" description="Rules, principles, protocols, and the drill / situation / live / conditioning idea bank.">
   <h1>Concepts</h1>
   {groups.map((g) => (
     <section class="concept-group">

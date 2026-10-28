@@ -35,6 +35,7 @@ for (const name of collections) {
     <h1>{c.name}</h1>
     <p class="move-badges">
       <span class="badge">{c.type}</span>
+      {c.blocks.map((b) => <span class={`badge solid block-${b}`}>{b}</span>)}
       {c.tags.map((t) => <span class="muted">#{t}</span>)}
     </p>
   </header>
